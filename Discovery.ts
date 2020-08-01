@@ -1,10 +1,10 @@
-var urn= "urn:schemas-konnected-io:device:Security:1";
-var device_ip;
-var device_port;
-var st_header;
-var device_url;
+const urn= "urn:schemas-konnected-io:device:Security:1";
+let device_ip,
+    device_port,
+    st_header,
+    device_url;
 
-var Client = require('node-ssdp').Client
+let Client = require('node-ssdp').Client
     ,client = new Client();
 
     client.on('response', function (headers, statusCode, rinfo) {
