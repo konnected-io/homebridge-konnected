@@ -1,0 +1,46 @@
+{
+  "name": "homebridge-konnected",
+  "version": "0.0.1",
+  "description": "Konnected Alarm Panel plugin for Homebridge",
+  "author": {
+    "name": "Mike Kormendy",
+    "email": "mike@somethinginteractive.com"
+  },
+  "contributors": [
+    {
+      "name": "Valentine Mhlanga",
+      "email": "valentine@themhlangas.com"
+    }
+  ],
+  "license": "MIT",
+  "keywords": [
+    "home",
+    "smart",
+    "security",
+    "sensors",
+    "alarm system",
+    "alarm panel",
+    "konnected",
+    "konnected-io",
+    "homekit",
+    "apple",
+    "homebridge",
+    "homebridge-plugin"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/konnected-io/homebridge-konnected.git"
+  },
+  "homepage": "https://konnected.io",
+  "bugs": {
+    "url": "https://github.com/konnected-io/homebridge-konnected/issues"
+  },
+  "main": "index.js",
+  "engines": {
+    "node": ">=12.0.0",
+    "homebridge": ">=1.1.1"
+  },
+  "dependencies": {
+    "@oznu/homebridge-types": "0.0.4"
+  }
+}
