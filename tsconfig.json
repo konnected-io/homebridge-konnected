@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "target": "ES6",
+    "module": "commonjs",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "strict": true,
+    "esModuleInterop": true,
+    "noImplicitAny": false
+  },
+  "include": [
+    "src/"
+  ],
+  "exclude": [
+    "**/*.spec.ts",
+    "src/discovery.ts"
+  ]
+}

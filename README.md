@@ -65,7 +65,7 @@
         "primaryphone": "555-555-5555",
         "secondaryphone": "555-555-5555"
       }
-    ]
+    ],
     "logLevel": 1
 }
 ```
