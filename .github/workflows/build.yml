@@ -1,6 +1,6 @@
-name: Build and Lint
+name: Lint & Build
 
-on: [push, pull_request]
+# on: [push, pull_request]
 
 jobs:
   build:
