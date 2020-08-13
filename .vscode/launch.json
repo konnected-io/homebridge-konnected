@@ -15,7 +15,7 @@
       ],
       "console": "internalConsole",
       "internalConsoleOptions": "neverOpen",
-      "outputCapture": "console",
+      "outputCapture": "std",
       "program": "${workspaceFolder}/src/index.js",
       "skipFiles": [
         "<node_internals>/**"
