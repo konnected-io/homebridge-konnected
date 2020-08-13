@@ -1,25 +1,17 @@
 {
-  "private": true,
-  "displayName": "Konnected Alarm Panel",
+  "displayName": "Konnected Security",
   "name": "homebridge-konnected",
   "version": "0.0.1",
   "description": "Konnected Alarm Panel plugin for Homebridge",
-  "author": {
-    "name": "Mike Kormendy",
-    "email": "mike@somethinginteractive.com",
-    "web": "https://mikekormendy.com"
-  },
+  "author": "Mike Kormendy <mike@somethinginteractive.com> (https://mikekormendy.com)",
   "contributors": [
-    {
-      "name": "Valentine Mhlanga",
-      "email": "valentine@themhlangas.com"
-    }
+    "Valentine Mhlanga <valentine@themhlangas.com>"
   ],
   "license": "MIT",
   "homepage": "https://konnected.io",
   "repository": {
     "type": "git",
-    "url": "https://github.com/konnected-io/homebridge-konnected.git"
+    "url": "git+https://github.com/konnected-io/homebridge-konnected.git"
   },
   "bugs": {
     "url": "https://github.com/konnected-io/homebridge-konnected/issues"
@@ -32,7 +24,7 @@
   "scripts": {
     "preinstall": "npm list -g homebridge || npm install -g homebridge",
     "build": "rimraf ./dist && tsc",
-    "debug": "npm run build && npm list -g homebridge-konnected || npm link && nodemon",
+    "debug": "npm run build && npm list -g homebridge-konnected || npm link && nodemon --exitcrash",
     "prepublishonly": "eslint src/**.ts && npm run build"
   },
   "keywords": [
@@ -52,21 +44,23 @@
   "dependencies": {
     "@oznu/homebridge-types": "0.0.4",
     "express": "^4.17.1",
+    "ip": "^1.1.5",
     "node-fetch": "^2.6.0",
-    "node-ssdp": "latest"
+    "node-ssdp": "^4.0.0"
   },
   "devDependencies": {
     "@types/express": "^4.17.7",
+    "@types/ip": "^1.1.0",
     "@types/node": "^14.0.14",
     "@types/node-fetch": "^2.5.7",
     "@types/node-ssdp": "^3.3.1",
     "@typescript-eslint/eslint-plugin": "^3.4.0",
     "@typescript-eslint/parser": "^3.4.0",
     "eslint": "^7.3.1",
+    "homebridge": "^1.1.1",
     "nodemon": "^2.0.4",
     "rimraf": "^3.0.2",
     "ts-node": "^8.10.2",
-    "typescript": "^3.9.5",
-    "homebridge": "latest"
+    "typescript": "^3.9.5"
   }
 }
