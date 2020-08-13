@@ -3,14 +3,243 @@
   "pluginType": "platform",
   "singular": true,
   "schema": {
-    "type": "object",
-    "properties": {
-      "name": {
-        "title": "Name",
-        "type": "string",
-        "required": true,
-        "default": "Example Dynamic Platform"
+    "name": {
+      "title": "Name",
+      "description": "The name that will appear in your homebridge log.",
+      "type": "string",
+      "default": "Konnected",
+      "required": true
+    },
+    "listenerPort": {
+      "title": "Listening Port (optional)",
+      "description": "Provide a port number to force the Konnected Homebridge plugin to listen on for zone state changes.",
+      "type": "integer",
+      "placeholder": "(default: randomized by availability)",
+      "minimum": 1000,
+      "maximum": 65535
+    },
+    "discoveryTimeout": {
+      "title": "Discovery Timeout (optional)",
+      "description": "Provide a length of time in seconds to allow this plugin to discover all of the Konnected Alarm Panel on the network.",
+      "type": "integer",
+      "placeholder": "(default: 10 seconds)",
+      "minimum": 1,
+      "maximum": 300
+    },
+    "panels": {
+      "title": "Alarm Panels",
+      "description": "These are the individual Konnected Alarm Panel module boards.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "section": {
+            "title": "PANEL MODULE"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string",
+            "default": "Alarm Panel 1",
+            "required": true
+          },
+          "model": {
+            "type": "string"
+          },
+          "serialNumber": {
+            "type": "string"
+          },
+          "uuid": {
+            "title": "UUID",
+            "type": "string",
+            "readonly": true
+          },
+          "firmwareRevision": {
+            "type": "string"
+          },
+          "zones": {
+            "title": "Zones",
+            "description": "Customize the names and types of your zones.<br><em>Please note that if you do not define your zones here, then all zones will be considered binary contact sensors.</em>",
+            "type": "array",
+            "minItems": 6,
+            "maxItems": 15,
+            "items": {
+              "type": "object",
+              "properties": {
+                "section": {
+                  "title": "ZONE"
+                },
+                "zoneNumber": {
+                  "title": "Zone Number",
+                  "type": "integer",
+                  "default": 1,
+                  "oneOf": [
+                    {
+                      "title": "V1/V2 & Pro: 1",
+                      "enum": [1]
+                    },
+                    {
+                      "title": "V1/V2 & Pro: 2",
+                      "enum": [2]
+                    },
+                    {
+                      "title": "V1/V2 & Pro: 3",
+                      "enum": [3]
+                    },
+                    {
+                      "title": "V1/V2 & Pro: 4",
+                      "enum": [4]
+                    },
+                    {
+                      "title": "V1/V2 & Pro: 5",
+                      "enum": [5]
+                    },
+                    {
+                      "title": "V1/V2 & Pro: 6",
+                      "enum": [6]
+                    },
+                    {
+                      "title": "V1/V2: 7 Out or Alarm",
+                      "enum": [7]
+                    },
+                    {
+                      "title": "Pro Only: 7",
+                      "enum": [7]
+                    },
+                    {
+                      "title": "Pro Only: 8",
+                      "enum": [8]
+                    },
+                    {
+                      "title": "Pro Only: 9",
+                      "enum": [9]
+                    },
+                    {
+                      "title": "Pro Only: 10",
+                      "enum": [10]
+                    },
+                    {
+                      "title": "Pro Only: 11",
+                      "enum": [11]
+                    },
+                    {
+                      "title": "Pro Only: 12",
+                      "enum": [12]
+                    },
+                    {
+                      "title": "Pro Only: 13 Alarm Siren 1",
+                      "enum": [13]
+                    },
+                    {
+                      "title": "Pro Only: 14 Out",
+                      "enum": [14]
+                    },
+                    {
+                      "title": "Pro Only: 15 Alarm Siren 2",
+                      "enum": [15]
+                    }
+                  ]
+                },
+                "zoneName": {
+                  "title": "Zone Name",
+                  "type": "string",
+                  "placeholder": "(E.g., Living Room Motion)"
+                },
+                "zoneType": {
+                  "title": "Zone Type",
+                  "type": "string",
+                  "default": "contact",
+                  "oneOf": [
+                    {
+                      "title": "Contact Sensor",
+                      "enum": ["contact"]
+                    },
+                    {
+                      "title": "Motion Sensor",
+                      "enum": ["motion"]
+                    },
+                    {
+                      "title": "Glass Break Sensor",
+                      "enum": ["glass"]
+                    },
+                    {
+                      "title": "Smoke / CO Sensor",
+                      "enum": ["smoke"]
+                    },
+                    {
+                      "title": "Tempurature Sensor",
+                      "enum": ["temperature"]
+                    },
+                    {
+                      "title": "Temperature / Humidity Sensor",
+                      "enum": ["temphumid"]
+                    },
+                    {
+                      "title": "Water Leak / Rain Sensor",
+                      "enum": ["water"]
+                    },
+                    {
+                      "title": "Alarm Siren",
+                      "enum": ["siren"]
+                    },
+                    {
+                      "title": "Alarm Strobe Light",
+                      "enum": ["strobe"]
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
       }
     }
-  }
+  },
+  "layout": [
+    {
+      "items": [
+        "name",
+        {
+          "key": "listenerPort",
+          "type": "number"
+        }, {
+          "key": "discoveryTimeout",
+          "type": "number"
+        },
+        {
+          "key": "panels",
+          "type": "array",
+          "orderable": true,
+          "buttonText": "Add Panel",
+          "expandable": true,
+          "expanded": true,
+          "items": [
+            "panels[].section",
+            "panels[].name",
+            "panels[].model",
+            "panels[].serialNumber",
+            "panels[].uuid",
+            "panels[].firmwareRevision",
+            {
+              "key": "panels[].zones",
+              "type": "array",
+              "orderable": true,
+              "buttonText": "Add Zone",
+              "items": [
+                "panels[].zones[].section",
+                {
+                  "key": "panels[].zones[].zoneNumber",
+                  "type": "string"
+                },
+                "panels[].zones[].zoneName",
+                {
+                  "key": "panels[].zones[].zoneType",
+                  "default": "contact"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
 }
