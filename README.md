@@ -7,6 +7,11 @@
 [![npm](https://img.shields.io/npm/v/homebridge-konnected.svg)](https://www.npmjs.com/package/homebridge-konnected)
 [![verified-by-homebridge](https://badgen.net/badge/homebridge/verified/purple)](https://github.com/homebridge/homebridge/wiki/Verified-Plugins)
 
+# ⚠️ WARNING ⚠️
+*This repository is in development is not ready for public use.*
+
+The first stable version will be made public as an official github release (this is not a release, please read about [github releases](https://docs.github.com/en/enterprise/2.16/user/github/administering-a-repository/about-releases) for more information). As of yet, we do not have a release date planned, but progress on this project is actively being made. Thank you for your patience.
+
 # Supported Features
 
  * Querying panels
