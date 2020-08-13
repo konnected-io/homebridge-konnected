@@ -1,6 +1,6 @@
 import { API, DynamicPlatformPlugin, Logger, PlatformAccessory, PlatformConfig, Service, Characteristic } from 'homebridge';
 
-import { PLATFORM_NAME, PLUGIN_NAME } from './settings';
+import { PLATFORM, PLATFORM_NAME, PLUGIN_NAME } from './settings';
 import { KonnectedPlatformAccessory } from './platformAccessory';
 
 import client from 'node-ssdp';
@@ -161,11 +161,11 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
         new ExamplePlatformAccessory(this, accessory);
 
         // link the accessory to your platform
-        this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
+        this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM, [accessory]);
       }
 
       // it is possible to remove platform accessories at any time using `api.unregisterPlatformAccessories`, eg.:
-      // this.api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
+      // this.api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM, [accessory]);
     }
     */
 
