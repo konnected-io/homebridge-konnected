@@ -3,9 +3,11 @@ import { API, DynamicPlatformPlugin, Logger, PlatformAccessory, PlatformConfig, 
 import { PLATFORM, PLATFORM_NAME, PLUGIN_NAME } from './settings';
 import { KonnectedPlatformAccessory } from './platformAccessory';
 
-import client from 'node-ssdp';
-import fetch from 'node-fetch';
-import express from 'express';
+import http from 'http';        // for creating a listening server
+import ip from 'ip';            // for getting system active IP
+import express from 'express';  // for the listening API
+import client from 'node-ssdp'; // for devices discovery
+import fetch from 'node-fetch'; // for making calls to the device
 
 /**
  * HomebridgePlatform
@@ -15,14 +17,23 @@ import express from 'express';
 export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
   public readonly Service: typeof Service = this.api.hap.Service;
   public readonly Characteristic: typeof Characteristic = this.api.hap.Characteristic;
+  public readonly Accessory: typeof PlatformAccessory = this.api.platformAccessory;
 
   // this is used to track restored cached accessories
   public readonly accessories: PlatformAccessory[] = [];
 
+  // define shared variables here
+  public platform: string = this.config.platform || PLATFORM; // konnected
+  public platformName: string = this.config.name || PLATFORM_NAME;// Konnected
+  public pluginName: string = this.config.pluginName || PLUGIN_NAME; // homebridge-konnected
+  public listenerAddress: string = ip.address();
+  public listenerPort!: number;
+  
+
   constructor(
     public readonly log: Logger,
     public readonly config: PlatformConfig,
-    public readonly api: API,
+    public readonly api: API
   ) {
     this.log.debug('Finished initializing platform');
 
@@ -32,8 +43,10 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
     // to start discovery of new accessories.
     this.api.on('didFinishLaunching', () => {
       log.debug('Executed didFinishLaunching callback');
+
       // run the method to discover / register your devices as accessories
-      this.discoverDevices();
+      this.listeningServer();
+      this.discoverPanels();
     });
   }
 
@@ -49,49 +62,85 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
   }
 
   /**
-   * This is an example method showing how to register discovered accessories.
-   * Accessories must only be registered once, previously created accessories
-   * must not be registered again to prevent "duplicate UUID" errors.
+   * Creates a listening server for state changes from the alarm panel zones.
    */
-  discoverDevices() {
+  listeningServer() {
+
+    const app = express();
+    const server = http.createServer(app);
+
+    this.listenerPort = this.config.listenerPort || 0;
+
+
+    server.listen(this.listenerPort, () => {
+      // store port to its global variable
+      this.listenerPort = server!.address()!['port'];
+      this.log.info(`Listening for zone changes on ${ip.address()} port ${this.listenerPort}`);
+    });
+
+    // restart or crash cleanup
+    const cleanup = () => {
+      server.on('close', () => {
+        process.exit(0);
+      });
+      server.close();
+      this.log.info(`Listening port ${this.listenerPort} closed and released`);
+    };
+    process.on('SIGINT', cleanup).on('SIGTERM', cleanup);
+
+
+    app.put('/api/konnected/device/:id', (req, res) => {
+      
+      this.log.info(req.params.id);
+
+      // check to see if that id exists
+
+      res.json({'success': true});
+
+      // state change logic (either call or code)
+
+    });
+
+
+  }
+
+  /**
+   * Discovers alarm panels on the network.
+   */
+  discoverPanels() {
 
     const ssdpClient = new client.Client();
-    const listeningServer = express();
-    // const urnReg = 'urn:schemas-konnected-io:device:Security:1';
-    // const urnPro = 'urn:schemas-konnected-io:device:Security:2';
-    const urnPartial = 'urn:schemas-konnected-io:device';
+    const ssdpTimeout = (this.config.discoveryTimeout || 10) * 1000;
+    const ssdpUrnPartial = 'urn:schemas-konnected-io:device';
+    // urn:schemas-konnected-io:device:Security:1 // Alarm Panel
+    // urn:schemas-konnected-io:device:Security:2 // Alarm Panel Pro
 
-    let headerST: string;
-    let headerLocation: string;
-    const ssdpTimeout = 10; // this can be re-assigned in the homebridge config for this platform
+    let ssdpHeaderST: string;
+    let sspdHeaderLocation: string;
 
-    // // set up our listening server
-    // // https://medium.com/@onejohi/building-a-simple-rest-api-with-nodejs-and-express-da6273ed7ca9
-    // // https://blog.leonhassan.co.uk/setting-up-a-simple-rest-server-in-node-js/
-    // listeningServer.listen(3000, () => {
-    //   console.log('Server running on port 3000');
-    // });
-    // listeningServer.get('/url', (req, res, next) => {
-    //   this.log.info('got a request!');
-    //   res.json(['Tony', 'Lisa', 'Michael', 'Ginger', 'Food']);
-    // });
+    // const konnectPanels = [];
 
     // set up our ssdp discovery
     ssdpClient.on('response', (headers, statusCode, response) => {
-      headerST = headers['ST'] ? headers['ST'] : '';
-      headerLocation = headers['LOCATION'] ? headers['LOCATION'] : '';
 
-      if (headerST.indexOf(urnPartial) !== -1) {
+      ssdpHeaderST = headers['ST'] || '';
+      sspdHeaderLocation = headers['LOCATION'] || '';
+
+      if (ssdpHeaderST.indexOf(ssdpUrnPartial) !== -1) {
+
+        console.log(headers);
+        console.log(response);
+        this.log.info(sspdHeaderLocation.replace('Device.xml', 'status'));
 
         (async () => {
 
-          const fetchResponse = await fetch(headerLocation);
-          const fetchBody = await fetchResponse.text();
+          const fetchResponse = await fetch(sspdHeaderLocation.replace('Device.xml', 'status'));
+          const fetchBody = JSON.parse(await fetchResponse.text());
+          console.log(fetchBody);
 
-          console.log(headers);
-          console.log(response);
-          this.log.info(headerLocation);
-          this.log.info(fetchBody);
+          // konnectPanels.push(
+          //   { }
+          // );
 
         })();
 
@@ -104,12 +153,20 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
     
     setTimeout(() => {
       ssdpClient.stop();
-    }, ssdpTimeout * 1000);
+    }, ssdpTimeout);
+
+  }
+
+  /**
+   * This is an example method showing how to register discovered accessories.
+   * Accessories must only be registered once, previously created accessories
+   * must not be registered again to prevent "duplicate UUID" errors.
+   */
+  discoverZones(panelsObject: object) {
 
     // EXAMPLE ONLY
     // A real plugin you would discover accessories from the local network, cloud services
     // or a user-defined array in the platform config.
-    /*
     const exampleDevices = [
       {
         exampleUniqueId: 'ABCD',
@@ -143,14 +200,14 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
 
         // create the accessory handler for the restored accessory
         // this is imported from `platformAccessory.ts`
-        new ExamplePlatformAccessory(this, existingAccessory);
+        new KonnectedPlatformAccessory(this, existingAccessory);
 
       } else {
         // the accessory does not yet exist, so we need to create it
         this.log.info('Adding new accessory:', device.exampleDisplayName);
 
         // create a new accessory
-        const accessory = new this.api.platformAccessory(device.exampleDisplayName, uuid);
+        const accessory = new this.Accessory(device.exampleDisplayName, uuid);
 
         // store a copy of the device object in the `accessory.context`
         // the `context` property can be used to store any data about the accessory you may need
@@ -158,7 +215,7 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
 
         // create the accessory handler for the newly create accessory
         // this is imported from `platformAccessory.ts`
-        new ExamplePlatformAccessory(this, accessory);
+        new KonnectedPlatformAccessory(this, accessory);
 
         // link the accessory to your platform
         this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM, [accessory]);
@@ -167,7 +224,7 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
       // it is possible to remove platform accessories at any time using `api.unregisterPlatformAccessories`, eg.:
       // this.api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM, [accessory]);
     }
-    */
 
   }
+
 }
