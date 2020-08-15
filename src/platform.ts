@@ -162,7 +162,7 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
    * Accessories must only be registered once, previously created accessories
    * must not be registered again to prevent "duplicate UUID" errors.
    */
-  discoverZones(panelsObject: object) {
+  discoverZones() {
 
     // EXAMPLE ONLY
     // A real plugin you would discover accessories from the local network, cloud services
