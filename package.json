@@ -23,6 +23,7 @@
   "main": "dist/index.js",
   "scripts": {
     "preinstall": "npm list -g homebridge || npm install -g homebridge",
+    "lint": "eslint src/**.ts",
     "build": "rimraf ./dist && tsc",
     "debug": "npm run build && npm list -g homebridge-konnected || npm link && nodemon --exitcrash",
     "prepublishonly": "eslint src/**.ts && npm run build"

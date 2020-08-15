@@ -10,22 +10,6 @@
       "default": "Konnected",
       "required": true
     },
-    "listenerPort": {
-      "title": "Listening Port (optional)",
-      "description": "Provide a port number to force the Konnected Homebridge plugin to listen on for zone state changes.",
-      "type": "integer",
-      "placeholder": "(default: randomized by availability)",
-      "minimum": 1000,
-      "maximum": 65535
-    },
-    "discoveryTimeout": {
-      "title": "Discovery Timeout (optional)",
-      "description": "Provide a length of time in seconds to allow this plugin to discover all of the Konnected Alarm Panel on the network.",
-      "type": "integer",
-      "placeholder": "(default: 10 seconds)",
-      "minimum": 1,
-      "maximum": 300
-    },
     "panels": {
       "title": "Alarm Panels",
       "description": "These are the individual Konnected Alarm Panel module boards.",
@@ -58,18 +42,20 @@
           },
           "zones": {
             "title": "Zones",
-            "description": "Customize the names and types of your zones.<br><em>Please note that if you do not define your zones here, then all zones will be considered binary contact sensors.</em>",
+            "description": "Customize the names and types of your zones.<br><span class='primary-text'>Please note that if you do not define your zones here or manually in the config.json, all zones will be considered open/close contact sensors.</span>",
             "type": "array",
+            "expandable": true,
+            "expanded": false,
             "minItems": 6,
             "maxItems": 15,
             "items": {
               "type": "object",
               "properties": {
                 "section": {
-                  "title": "ZONE"
+                  "title": "<h4 class='card-title mb-0'>Zone</h4>"
                 },
                 "zoneNumber": {
-                  "title": "Zone Number",
+                  "title": "Number",
                   "type": "integer",
                   "default": 1,
                   "oneOf": [
@@ -139,13 +125,8 @@
                     }
                   ]
                 },
-                "zoneName": {
-                  "title": "Zone Name",
-                  "type": "string",
-                  "placeholder": "(E.g., Living Room Motion)"
-                },
                 "zoneType": {
-                  "title": "Zone Type",
+                  "title": "Type",
                   "type": "string",
                   "default": "contact",
                   "oneOf": [
@@ -184,11 +165,45 @@
                     {
                       "title": "Alarm Strobe Light",
                       "enum": ["strobe"]
+                    },
+                    {
+                      "title": "Switch",
+                      "enum": ["switch"]
                     }
                   ]
+                },
+                "zoneName": {
+                  "title": "Name",
+                  "type": "string",
+                  "placeholder": "(E.g., Living Room Motion)"
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "advanced": {
+      "title": "Advanced",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "listenerPort": {
+            "title": "Listening Port (optional)",
+            "description": "Provide a port number to force the Konnected Homebridge plugin to listen on for zone state changes.",
+            "type": "integer",
+            "placeholder": "(default: randomized by availability)",
+            "minimum": 1000,
+            "maximum": 65535
+          },
+          "discoveryTimeout": {
+            "title": "Discovery Timeout (optional)",
+            "description": "Provide a length of time in seconds to allow this plugin to discover all of the Konnected Alarm Panel on the network.",
+            "type": "integer",
+            "placeholder": "(default: 10 seconds)",
+            "minimum": 1,
+            "maximum": 300
           }
         }
       }
@@ -197,13 +212,25 @@
   "layout": [
     {
       "items": [
-        "name",
         {
-          "key": "listenerPort",
-          "type": "number"
-        }, {
-          "key": "discoveryTimeout",
-          "type": "number"
+          "type": "flex",
+          "flex-flow": "row wrap",
+          "items": [
+            {
+              "type": "flex",
+              "flex-flow": "column",
+              "items": [
+                "name"
+              ]
+            },
+            {
+              "type": "flex",
+              "flex-flow": "column",
+              "items": [
+                ""
+              ]
+            }
+          ]
         },
         {
           "key": "panels",
@@ -211,31 +238,100 @@
           "orderable": true,
           "buttonText": "Add Panel",
           "expandable": true,
-          "expanded": true,
+          "expanded": false,
           "items": [
             "panels[].section",
-            "panels[].name",
-            "panels[].model",
-            "panels[].serialNumber",
-            "panels[].uuid",
-            "panels[].firmwareRevision",
+            {
+              "type": "flex",
+              "flex-flow": "row wrap",
+              "items": [
+                {
+                  "type": "flex",
+                  "flex-flow": "column",
+                  "items": [
+                    "panels[].name"
+                  ]
+                },
+                {
+                  "type": "flex",
+                  "flex-flow": "column",
+                  "items": [
+                    ""
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "flex",
+              "flex-flow": "row wrap",
+              "items": [
+                {
+                  "type": "flex",
+                  "flex-flow": "column",
+                  "items": [
+                    "panels[].model",
+                    "panels[].serialNumber"
+                  ]
+                },
+                {
+                  "type": "flex",
+                  "flex-flow": "column",
+                  "items": [
+                    "panels[].uuid",
+                    "panels[].firmwareRevision"
+                  ]
+                }
+              ]
+            },
             {
               "key": "panels[].zones",
               "type": "array",
               "orderable": true,
+              "expandable": true,
+              "expanded": true,
               "buttonText": "Add Zone",
               "items": [
-                "panels[].zones[].section",
                 {
-                  "key": "panels[].zones[].zoneNumber",
-                  "type": "string"
-                },
-                "panels[].zones[].zoneName",
-                {
-                  "key": "panels[].zones[].zoneType",
-                  "default": "contact"
+                  "items": [
+                    {
+                      "key": "panels[].zones[].section"
+                    },
+                    {
+                      "type": "flex",
+                      "flex-flow": "row wrap",
+                      "items": [
+                        {
+                          "key": "panels[].zones[].zoneNumber",
+                          "type": "string"
+                        },
+                        {
+                          "key": "panels[].zones[].zoneType",
+                          "default": "contact"
+                        }
+                      ]
+                    },
+                    {
+                      "key": "panels[].zones[].zoneName"
+                    }
+                  ]
                 }
               ]
+            }
+          ]
+        },
+        {
+          "key": "Advanced",
+          "type": "array",
+          "expandable": true,
+          "expanded": false,
+          "items": [
+            {
+              "key": "advanced[].listenerPort",
+              "type": "number"
+            },
+            {
+              "key": "advanced[].discoveryTimeout",
+              "type": "number"
             }
           ]
         }
