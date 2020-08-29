@@ -6,6 +6,7 @@
 [![npm](https://img.shields.io/npm/dm/homebridge-konnected.svg)](https://www.npmjs.com/package/homebridge-konnected)
 [![npm](https://img.shields.io/npm/v/homebridge-konnected.svg)](https://www.npmjs.com/package/homebridge-konnected)
 [![verified-by-homebridge](https://badgen.net/badge/homebridge/verified/purple)](https://github.com/homebridge/homebridge/wiki/Verified-Plugins)
+[![Lint & Build](https://github.com/konnected-io/homebridge-konnected/workflows/Lint%20&%20Build/badge.svg)](https://github.com/konnected-io/homebridge-konnected/actions)
 
 # ⚠️ WARNING ⚠️
 *This repository is in development is not ready for public use.*
