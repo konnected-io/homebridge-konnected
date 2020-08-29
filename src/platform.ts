@@ -3,11 +3,11 @@ import { API, DynamicPlatformPlugin, Logger, PlatformAccessory, PlatformConfig, 
 import { PLATFORM, PLATFORM_NAME, PLUGIN_NAME } from './settings';
 import { KonnectedPlatformAccessory } from './platformAccessory';
 
-import http from 'http';        // for creating a listening server
-import ip from 'ip';            // for getting system active IP
-import express from 'express';  // for the listening API
-import client from 'node-ssdp'; // for devices discovery
-import fetch from 'node-fetch'; // for making calls to the device
+import client from 'node-ssdp';      // for devices discovery
+import express from 'express';       // for the listening API
+import fetch from 'node-fetch';      // for making calls to the device
+import http from 'http';             // for creating a listening server
+import ip from 'ip';                 // for getting system active IP
 
 /**
  * HomebridgePlatform
