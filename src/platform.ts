@@ -8,6 +8,7 @@ import express from 'express';       // for the listening API
 import fetch from 'node-fetch';      // for making calls to the device
 import http from 'http';             // for creating a listening server
 import ip from 'ip';                 // for getting system active IP
+import { v4 as uuidv4 } from 'uuid'; // for creating auth tokens
 
 /**
  * HomebridgePlatform
