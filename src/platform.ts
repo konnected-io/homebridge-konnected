@@ -69,17 +69,16 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
 
     const app = express();
     const server = http.createServer(app);
+    app.use(express.json());
 
     this.listenerPort = this.config.listenerPort || 0;
-
-
     server.listen(this.listenerPort, () => {
       // store port to its global variable
-      this.listenerPort = server!.address()!['port'];
+      this.listenerPort = server.address()!['port'];
       this.log.info(`Listening for zone changes on ${ip.address()} port ${this.listenerPort}`);
     });
 
-    // restart or crash cleanup
+    // restart/crash cleanup
     const cleanup = () => {
       server.on('close', () => {
         process.exit(0);
@@ -89,17 +88,26 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
     };
     process.on('SIGINT', cleanup).on('SIGTERM', cleanup);
 
-
+    // listen for PUT requests at the following route/endpoint
     app.put('/api/konnected/device/:id', (req, res) => {
       
+      // do validation from the bearer auth token
+      // sent in the provisioning step to the device with the
+      // stripped colon version of the MAC address
+
+      // log the ID of the panel from the konnected request
       this.log.info(req.params.id);
+
+      // log the payload of the konnected request and tigger accessory change
+      this.log.info(req.body);
+      // console.log(res);
 
       // check to see if that id exists
 
-      res.json({'success': true});
+      // send the following response
+      res.status(200).json({ success: true });
 
       // state change logic (either call or code)
-
     });
 
 
@@ -139,9 +147,7 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
           const fetchBody = JSON.parse(await fetchResponse.text());
           console.log(fetchBody);
 
-          // konnectPanels.push(
-          //   { }
-          // );
+          // call method to provision panels missing in the cache and then add panel to cache
 
         })();
 
@@ -159,11 +165,117 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
   }
 
   /**
+   * Provision alarm panels -- for now this is manually provisioned with a desktop rest client
+   */
+  provisionPanels_NOTUSEDYET(panelObject, listenerObject) {
+    // need to first check our homebridge cache for existing panels with the mac address
+    // this will likely be done in the ssdp discovery, if they exist, skip this method entirely
+
+    const panelSettingsEndpoint =
+      'http://' + panelObject.IP + ':' + panelObject.port + '/settings';
+    const listeningEndpoint = 'http://' + listenerObject.IP + ':' + listenerObject.Port + '/api/konnected';
+
+    const bearerAuthToken = uuidv4(); // generate an RFC4122 compliant UUID
+
+    const headers = {
+      'Content-Type': 'application/json',
+    };
+
+    // NOTE: we first need to provision without any pins
+    const panelConfigurationPayload = {
+      endpoint_type: 'rest',
+      endpoint: listeningEndpoint,
+      token: bearerAuthToken,
+      sensors: null,
+      dht_sensors: null,
+      ds18b20_sensors: null,
+      actuators: null,
+      blink: true,
+      discovery: true,
+    };
+
+    // later example where we define pins
+    // see: https://help.konnected.io/support/solutions/articles/32000026807-configuration
+    /*
+    const panelConfigurationPayload = {
+      endpoint_type: "rest",
+      endpoint: listeningEndpoint,
+      token: bearerAuthToken,
+      sensors: [
+        { pin: 1 },
+        { pin: 2 },
+        { pin: 5 },
+        { pin: 6 },
+        { pin: 7 },
+        { pin: 9 },
+      ],
+      dht_sensors: [],
+      ds18b20_sensors: [],
+      actuators: [],
+      blink: true,
+      discovery: true,
+    };
+    */
+
+    // we need to test and implement:
+    // - invalidly assigned pins/zones for the different types of sensors and actuating alarms
+    //   (all panel device versions have certain pins/zones are limited to specific sensors or actuating sirens/etc)
+    // - likely need to check model of panel and compare pins against a predifined array of options for each model
+    //   (see: https://github.com/home-assistant/core/blob/dev/homeassistant/components/konnected/const.py#L23
+    //    and https://help.konnected.io/support/solutions/articles/32000028978-alarm-panel-pro-inputs-and-outputs)
+    // - need to create an array of items for the mapping of names of sensors in the plugin config settings to
+    //   the available sensors and actuators (eg. motion, glass/break, and contact sensors are simply "sensors", etc.)
+
+    const provisionPanelResponse = async (url: string) => {
+      try {
+        const response = await fetch(url, {
+          method: 'PUT',
+          headers: headers,
+          body: JSON.stringify(panelConfigurationPayload),
+        });
+        const json = await response.json();
+        console.log(json);
+      } catch (error) {
+        console.log(error);
+      }
+    };
+
+    provisionPanelResponse(panelSettingsEndpoint);
+  }
+
+
+  /**
+   * The Konnected alarm panels do not have any logic for an "alarm system"
+   * 
+   * We need to provide alarm system logic that implements an alarm system with states:
+   * - armed away: all sensors actively monitored for changes, countdown beeps from piezo, then trigger siren/flashing light
+   * - armed home: only perimeter sensors actively monitored, countdown beeps from piezo, then trigger siren/flashing light
+   * - armed night: only perimeter sensors actively monitored, immediately trigger siren/flashing light with no countdown beeps from piezo
+   * - disarmed: when sensors change state, check an option for momentary piezo beeps for change, but siren is never triggered
+   *
+   * We will likely need to make a call to a NoonLight method here at some point
+   */
+
+  /**
+   * NoonLight logic
+   */
+
+
+  /**
+   * Actuate siren/light/switch method
+   * @param device 
+   */
+  actuateAccessory(device) {
+    console.log(device);
+  }
+
+
+  /**
    * This is an example method showing how to register discovered accessories.
    * Accessories must only be registered once, previously created accessories
    * must not be registered again to prevent "duplicate UUID" errors.
    */
-  discoverZones() {
+  registerPanelsAndZonesAsAccessories_NOTUSEDYET() {
 
     // EXAMPLE ONLY
     // A real plugin you would discover accessories from the local network, cloud services
