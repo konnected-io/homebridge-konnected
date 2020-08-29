@@ -11,53 +11,39 @@
       "required": true
     },
     "panels": {
-      "title": "Alarm Panels",
       "description": "These are the individual Konnected Alarm Panel module boards.",
       "type": "array",
       "items": {
         "type": "object",
         "properties": {
-          "section": {
-            "title": "PANEL MODULE"
-          },
           "name": {
-            "title": "Name",
+            "title": "Panel Name",
             "type": "string",
             "default": "Alarm Panel 1",
             "required": true
           },
-          "model": {
-            "type": "string"
-          },
-          "serialNumber": {
-            "type": "string"
-          },
           "uuid": {
             "title": "UUID",
-            "type": "string",
-            "readonly": true
+            "type": "string"
           },
-          "firmwareRevision": {
+          "macAddress": {
+            "title": "MAC Address",
+            "type": "string"
+          },
+          "IPAddress": {
+            "title": "IP Address",
             "type": "string"
           },
           "zones": {
-            "title": "Zones",
             "description": "Customize the names and types of your zones.<br><span class='primary-text'>Please note that if you do not define your zones here or manually in the config.json, all zones will be considered open/close contact sensors.</span>",
             "type": "array",
-            "expandable": true,
-            "expanded": false,
-            "minItems": 6,
             "maxItems": 15,
             "items": {
               "type": "object",
               "properties": {
-                "section": {
-                  "title": "<h4 class='card-title mb-0'>Zone</h4>"
-                },
                 "zoneNumber": {
                   "title": "Number",
                   "type": "integer",
-                  "default": 1,
                   "oneOf": [
                     {
                       "title": "V1/V2 & Pro: 1",
@@ -128,7 +114,6 @@
                 "zoneType": {
                   "title": "Type",
                   "type": "string",
-                  "default": "contact",
                   "oneOf": [
                     {
                       "title": "Contact Sensor",
@@ -172,10 +157,18 @@
                     }
                   ]
                 },
-                "zoneName": {
-                  "title": "Name",
+                "zoneLocation": {
+                  "title": "Location",
                   "type": "string",
-                  "placeholder": "(E.g., Living Room Motion)"
+                  "placeholder": "(E.g., Living Room)"
+                },
+                "zoneActiveAtHome": {
+                  "title": "Active in Home Mode",
+                  "type": "boolean"
+                },
+                "zoneActiveAtNight": {
+                  "title": "Active in Night Mode",
+                  "type": "boolean"
                 }
               }
             }
@@ -183,106 +176,39 @@
         }
       }
     },
-    "advanced": {
-      "title": "Advanced",
-      "type": "array",
-      "items": {
-        "type": "object",
-        "properties": {
-          "listenerPort": {
-            "title": "Listening Port (optional)",
-            "description": "Provide a port number to force the Konnected Homebridge plugin to listen on for zone state changes.",
-            "type": "integer",
-            "placeholder": "(default: randomized by availability)",
-            "minimum": 1000,
-            "maximum": 65535
-          },
-          "discoveryTimeout": {
-            "title": "Discovery Timeout (optional)",
-            "description": "Provide a length of time in seconds to allow this plugin to discover all of the Konnected Alarm Panel on the network.",
-            "type": "integer",
-            "placeholder": "(default: 10 seconds)",
-            "minimum": 1,
-            "maximum": 300
-          }
-        }
-      }
+    "listenerPort": {
+      "title": "Listening Port (optional)",
+      "description": "Provide a port number (between 1000 and 65535) to force the Konnected Homebridge plugin to listen on for zone state changes.",
+      "type": "integer",
+      "placeholder": "(default: randomized by availability)",
+      "minimum": 1000,
+      "maximum": 65535
+    },
+    "discoveryTimeout": {
+      "title": "Discovery Timeout (optional)",
+      "description": "Provide a length of time in seconds (between 1 and 300) to allow this plugin to discover all of the Konnected Alarm Panels on the network.",
+      "type": "integer",
+      "placeholder": "(default: 10 seconds)",
+      "minimum": 1,
+      "maximum": 300
     }
   },
   "layout": [
     {
       "items": [
-        {
-          "type": "flex",
-          "flex-flow": "row wrap",
-          "items": [
-            {
-              "type": "flex",
-              "flex-flow": "column",
-              "items": [
-                "name"
-              ]
-            },
-            {
-              "type": "flex",
-              "flex-flow": "column",
-              "items": [
-                ""
-              ]
-            }
-          ]
-        },
+        "name",
         {
           "key": "panels",
           "type": "array",
           "orderable": true,
-          "buttonText": "Add Panel",
           "expandable": true,
-          "expanded": false,
+          "expanded": true,
+          "buttonText": "Add Panel",
           "items": [
-            "panels[].section",
-            {
-              "type": "flex",
-              "flex-flow": "row wrap",
-              "items": [
-                {
-                  "type": "flex",
-                  "flex-flow": "column",
-                  "items": [
-                    "panels[].name"
-                  ]
-                },
-                {
-                  "type": "flex",
-                  "flex-flow": "column",
-                  "items": [
-                    ""
-                  ]
-                }
-              ]
-            },
-            {
-              "type": "flex",
-              "flex-flow": "row wrap",
-              "items": [
-                {
-                  "type": "flex",
-                  "flex-flow": "column",
-                  "items": [
-                    "panels[].model",
-                    "panels[].serialNumber"
-                  ]
-                },
-                {
-                  "type": "flex",
-                  "flex-flow": "column",
-                  "items": [
-                    "panels[].uuid",
-                    "panels[].firmwareRevision"
-                  ]
-                }
-              ]
-            },
+            "panels[].name",
+            "panels[].uuid",
+            "panels[].macAddress",
+            "panels[].IPAddress",
             {
               "key": "panels[].zones",
               "type": "array",
@@ -291,46 +217,26 @@
               "expanded": true,
               "buttonText": "Add Zone",
               "items": [
-                {
-                  "items": [
-                    {
-                      "key": "panels[].zones[].section"
-                    },
-                    {
-                      "type": "flex",
-                      "flex-flow": "row wrap",
-                      "items": [
-                        {
-                          "key": "panels[].zones[].zoneNumber",
-                          "type": "string"
-                        },
-                        {
-                          "key": "panels[].zones[].zoneType",
-                          "default": "contact"
-                        }
-                      ]
-                    },
-                    {
-                      "key": "panels[].zones[].zoneName"
-                    }
-                  ]
-                }
+                "panels[].zones[].zoneNumber",
+                "panels[].zones[].zoneType",
+                "panels[].zones[].zoneLocation",
+                "panels[].zones[].zoneActiveAtHome",
+                "panels[].zones[].zoneActiveAtNight"
               ]
             }
           ]
         },
         {
-          "key": "Advanced",
-          "type": "array",
+          "title": "Advanced",
+          "type": "fieldset",
           "expandable": true,
           "expanded": false,
-          "items": [
-            {
-              "key": "advanced[].listenerPort",
+          "items": [{
+              "key": "listenerPort",
               "type": "number"
             },
             {
-              "key": "advanced[].discoveryTimeout",
+              "key": "discoveryTimeout",
               "type": "number"
             }
           ]
