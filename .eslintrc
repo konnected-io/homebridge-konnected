@@ -23,7 +23,7 @@
     "curly": ["warn", "all"],
     "brace-style": ["warn"],
     "prefer-arrow-callback": ["warn"],
-    "max-len": [false, {
+    "max-len": [0, {
       "ignoreComments": true,
       "ignoreTrailingComments": true
     }],
