@@ -46,11 +46,12 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
     this.api.on('didFinishLaunching', () => {
       log.debug('Executed didFinishLaunching callback');
 
-      // run the method to discover / register your devices as accessories
+      // run the listening server & discover panels
       this.listeningServer();
       this.discoverPanels();
     });
   }
+
 
   /**
    * This function is invoked when homebridge restores cached accessories from disk at startup.
