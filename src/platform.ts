@@ -25,12 +25,12 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
   public readonly accessories: PlatformAccessory[] = [];
 
   // define shared variables here
-  public platform: string = this.config.platform || PLATFORM; // konnected
-  public platformName: string = this.config.name || PLATFORM_NAME;// Konnected
-  public pluginName: string = this.config.pluginName || PLUGIN_NAME; // homebridge-konnected
-  public listenerAddress: string = ip.address();
-  public listenerPort!: number;
-  
+  public  platform:     string   = this.config.platform || PLATFORM; // konnected
+  public  platformName: string   = this.config.name || PLATFORM_NAME; // Konnected
+  public  pluginName:   string   = this.config.pluginName || PLUGIN_NAME; // homebridge-konnected
+  public  listenerIP:   string   = this.config.advanced?.listenerIP || ip.address(); // system defined primary network interface
+  public  listenerPort: number   = this.config.advanced?.listenerPort || 0; // zero = autochoose
+  private listenerAuth: string[] = []; // for storing random auth strings
 
   constructor(
     public readonly log: Logger,
