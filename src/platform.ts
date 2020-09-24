@@ -89,29 +89,37 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
     };
     process.on('SIGINT', cleanup).on('SIGTERM', cleanup);
 
-    // listen for PUT requests at the following route/endpoint
-    app.put('/api/konnected/device/:id', (req, res) => {
-      
-      // do validation from the bearer auth token
-      // sent in the provisioning step to the device with the
-      // stripped colon version of the MAC address
-
-      // log the ID of the panel from the konnected request
-      this.log.info(req.params.id);
-
-      // log the payload of the konnected request and tigger accessory change
-      this.log.info(req.body);
+    const respond: any = (req, res) => {
+    
       // console.log(res);
 
-      // check to see if that id exists
+      // validate bearer auth token
+      if (this.listenerAuth.includes(req.headers.authorization.split('Bearer ').pop())) {
+        // send the following response
+        res.status(200).json({ success: true });
 
-      // send the following response
-      res.status(200).json({ success: true });
+        this.log.info(`Authentication successful for ${req.params.id}`);
+        this.log.info('Authentication token:', req.headers.authorization.split('Bearer ').pop());
+        this.log.info(req.body);
+        
+        // NEXT:
+        // call state change logic
+        // check to see if that id exists
+      }
+      else {
+        // send the following response
+        res.status(401).json({ success: false, reason: "Authorization failed, token not valid" });
 
-      // state change logic (either call or code)
-    });
+        this.log.error(`Authentication failed for ${req.params.id}, token not valid`);
+        this.log.error('Authentication token:', req.headers.authorization.split('Bearer ').pop());
+        this.log.error(req.body);
+      }
+    };
 
-
+    // listen for requests at the following route/endpoint
+    app.route('/api/konnected/device/:id')
+      .put(respond) // Alarm Panel V1/V2
+      .post(respond); // Alarm Panel Pro
   }
 
   /**
