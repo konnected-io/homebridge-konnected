@@ -23,7 +23,10 @@
     "curly": ["warn", "all"],
     "brace-style": ["warn"],
     "prefer-arrow-callback": ["warn"],
-    "max-len": ["warn", 140],
+    "max-len": [false, {
+      "ignoreComments": true,
+      "ignoreTrailingComments": true
+    }],
     "no-console": ["off"], // use the provided Homebridge log method instead and set this to warn
     "no-non-null-assertion": ["off"],
     "comma-spacing": ["error"],
