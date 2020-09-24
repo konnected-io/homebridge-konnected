@@ -10,9 +10,43 @@
       "default": "Konnected",
       "required": true
     },
+    "advanced": {
+      "type": "object",
+      "expandable": true,
+      "expanded": false,
+      "properties": {
+        "listenerPort": {
+          "title": "Listening Port (optional)",
+          "description": "Force panels to send zone state changes to a specific listening port on this system (between 1000 and 65535).",
+          "type": "number",
+          "step": 1,
+          "minimum": 1000,
+          "maximum": 65535,
+          "placeholder": "(default: randomized by availability)"
+        },
+        "listenerIP": {
+          "title": "Listening IP (optional)",
+          "description": "Force panels to send zone state changes to an IPV4 address that represents this system on the network. <i>In some cases, your system may have multiple network adapters registered.</i>",
+          "type": "string",
+          "placeholder": "(default: automatically selected)"
+        },
+        "discoveryTimeout": {
+          "title": "Discovery Timeout (optional)",
+          "description": "Provide a length of time in seconds (between 1 and 300) to allow this plugin to discover all of the Konnected Alarm Panels on the network.",
+          "type": "number",
+          "step": 1,
+          "minimum": 1,
+          "maximum": 300,
+          "placeholder": "(default: 10 seconds)"
+        }
+      }
+    },
     "panels": {
       "description": "These are the individual Konnected Alarm Panel module boards.",
       "type": "array",
+      "orderable": true,
+      "expandable": true,
+      "expanded": true,
       "items": {
         "type": "object",
         "properties": {
@@ -38,11 +72,13 @@
             "description": "Customize the names and types of your zones.<br><span class='primary-text'>Please note that if you do not define your zones here or manually in the config.json, all zones will be considered open/close contact sensors.</span>",
             "type": "array",
             "maxItems": 15,
+            "expandable": true,
+            "expanded": false,
             "items": {
               "type": "object",
               "properties": {
                 "zoneNumber": {
-                  "title": "Number",
+                  "title": "Zone Number",
                   "type": "integer",
                   "oneOf": [
                     {
