@@ -105,10 +105,9 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
         // NEXT:
         // call state change logic
         // check to see if that id exists
-      }
-      else {
+      } else {
         // send the following response
-        res.status(401).json({ success: false, reason: "Authorization failed, token not valid" });
+        res.status(401).json({ success: false, reason: 'Authorization failed, token not valid' });
 
         this.log.error(`Authentication failed for ${req.params.id}, token not valid`);
         this.log.error('Authentication token:', req.headers.authorization.split('Bearer ').pop());
@@ -135,7 +134,7 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
 
     let ssdpHeaderLocation: string;
     let ssdpHeaderUSN: string[] = []; // used for auth
-    let ssdpDeviceIDs: string[] = []; // used later for deduping
+    const ssdpDeviceIDs: string[] = []; // used later for deduping
 
     // begin discovery
     ssdpClient.search('ssdp:all');

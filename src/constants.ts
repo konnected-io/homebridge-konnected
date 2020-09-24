@@ -30,7 +30,7 @@ export const PIN_TO_ZONE = {
   6: 4,
   7: 5,
   8: 'out',
-  9: 6
+  9: 6,
 };
 
 export const ZONE_TO_PIN = {
