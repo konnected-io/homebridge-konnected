@@ -64,16 +64,15 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
     this.accessories.push(accessory);
   }
 
+
   /**
    * Creates a listening server for state changes from the alarm panel zones.
    */
   listeningServer() {
-
     const app = express();
     const server = http.createServer(app);
     app.use(express.json());
 
-    this.listenerPort = this.config.listenerPort || 0;
     server.listen(this.listenerPort, () => {
       // store port to its global variable
       this.listenerPort = server.address()!['port'];
