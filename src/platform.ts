@@ -122,55 +122,87 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
       .post(respond); // Alarm Panel Pro
   }
 
+
   /**
    * Discovers alarm panels on the network.
    */
   discoverPanels() {
-
     const ssdpClient = new client.Client();
-    const ssdpTimeout = (this.config.discoveryTimeout || 10) * 1000;
+    const ssdpTimeout = (this.config.advanced?.discoveryTimeout || 10) * 1000;
     const ssdpUrnPartial = 'urn:schemas-konnected-io:device';
-    // urn:schemas-konnected-io:device:Security:1 // Alarm Panel
+    // urn:schemas-konnected-io:device:Security:1 // Alarm Panel V1/V2
     // urn:schemas-konnected-io:device:Security:2 // Alarm Panel Pro
 
-    let ssdpHeaderST: string;
-    let sspdHeaderLocation: string;
+    let ssdpHeaderLocation: string;
+    let ssdpHeaderUSN: string[] = []; // used for auth
+    let ssdpDeviceIDs: string[] = []; // used later for deduping
 
-    // const konnectPanels = [];
+    // begin discovery
+    ssdpClient.search('ssdp:all');
 
-    // set up our ssdp discovery
+    // on discovery
     ssdpClient.on('response', (headers, statusCode, response) => {
+      // check for only konnected devices
+      if (headers.ST!.indexOf(ssdpUrnPartial) !== -1) {
+        ssdpHeaderLocation = headers.LOCATION || '';
+        ssdpHeaderUSN = headers.USN!.split('::') || [];
 
-      ssdpHeaderST = headers['ST'] || '';
-      sspdHeaderLocation = headers['LOCATION'] || '';
-
-      if (ssdpHeaderST.indexOf(ssdpUrnPartial) !== -1) {
-
-        console.log(headers);
-        console.log(response);
-        this.log.info(sspdHeaderLocation.replace('Device.xml', 'status'));
+        // console.log(ssdpHeaderUSN);
+        // console.log(ssdpHeaderLocation);
+        console.log('headers:', headers);
 
         (async () => {
+          // de-duplicate responses and then provision panel(s)
+          if (!ssdpDeviceIDs.includes(ssdpHeaderUSN[0])) {
+            // add the mac address as the deviceID
+            ssdpDeviceIDs.push(ssdpHeaderUSN[0]);
 
-          const fetchResponse = await fetch(sspdHeaderLocation.replace('Device.xml', 'status'));
-          const fetchBody = JSON.parse(await fetchResponse.text());
-          console.log(fetchBody);
+            // fetch panel status
+            const fetchResponse = JSON.parse(
+              await (
+                await fetch(ssdpHeaderLocation.replace('Device.xml', 'status'))
+              ).text()
+            );
+            console.log('status:', fetchResponse);
 
-          // call method to provision panels missing in the cache and then add panel to cache
-
+            // if the settings property does not exist in the response, then we have an unprovisioned panel
+            if (Object.keys(fetchResponse.settings).length === 0) {
+              // provision panel
+              this.provisionPanel(
+                headers.ST!,
+                fetchResponse, 
+                {
+                  ip: this.listenerIP,
+                  port: this.listenerPort,
+                }
+              );
+            } else {
+              const panelBroadcastEndpoint = new URL(fetchResponse.settings.endpoint);
+              // if the IP address or port are not the same, reprovision endpoint component
+              if (
+                panelBroadcastEndpoint.host !== this.listenerIP ||
+                Number(panelBroadcastEndpoint.port) !== this.listenerPort
+              ) {
+                this.provisionPanel(
+                  headers.ST!,
+                  fetchResponse,
+                  {
+                    ip: this.listenerIP,
+                    port: this.listenerPort,
+                  }
+                );
+              }
+            }
+          }
         })();
-
       }
-
     });
 
-    ssdpClient.search('ssdp:all');
-    // if we don't find a connection in 30 seconds, stop discovery
-    
+    // stop discovery after a number of seconds seconds, default is 10
     setTimeout(() => {
       ssdpClient.stop();
+      console.log('devices:', ssdpDeviceIDs);
     }, ssdpTimeout);
-
   }
 
   /**
