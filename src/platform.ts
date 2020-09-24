@@ -205,38 +205,84 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
     }, ssdpTimeout);
   }
 
+
   /**
-   * Provision alarm panels -- for now this is manually provisioned with a desktop rest client
+   * Provision alarm panel
    */
-  provisionPanels_NOTUSEDYET(panelObject, listenerObject) {
+  provisionPanel(panelSSDPURN: string, panelObject: any, listenerObject: any) {
     // need to first check our homebridge cache for existing panels with the mac address
     // this will likely be done in the ssdp discovery, if they exist, skip this method entirely
 
-    const panelSettingsEndpoint =
-      'http://' + panelObject.IP + ':' + panelObject.port + '/settings';
-    const listeningEndpoint = 'http://' + listenerObject.IP + ':' + listenerObject.Port + '/api/konnected';
+    const listeningEndpoint = `http://${listenerObject.ip}:${listenerObject.port}/api/konnected`;
+    const panelSettingsEndpoint = `http://${panelObject.ip}:${panelObject.port}/settings`;
+    const headers = { 'Content-Type': 'application/json' };
 
     const bearerAuthToken = uuidv4(); // generate an RFC4122 compliant UUID
+    this.listenerAuth.push(bearerAuthToken); // add to array for listening authorization
 
-    const headers = {
-      'Content-Type': 'application/json',
-    };
+    console.log('this.listenerAuth:', this.listenerAuth);
+
+    console.log('token:', bearerAuthToken);
+    console.log('panelUSN:', panelSSDPURN);
+
+    let sensorssetup;
+    // if the panel is a V1/V2
+    if (panelSSDPURN === 'urn:schemas-konnected-io:device:Security:1') {
+      console.log('we\'re provisioning a V1/V2 panel...');
+      // convert zones to pins and reduce the amount of zones available
+      sensorssetup = { pin: '1' };
+      // gather homebridge config settings and build json properties
+    } else {
+      console.log('we\'re provisioning a PRO panel...');
+      sensorssetup = { zone: '1' };
+    }
 
     // NOTE: we first need to provision without any pins
     const panelConfigurationPayload = {
       endpoint_type: 'rest',
       endpoint: listeningEndpoint,
       token: bearerAuthToken,
-      sensors: null,
-      dht_sensors: null,
-      ds18b20_sensors: null,
-      actuators: null,
+      sensors: [ sensorssetup ],
+      dht_sensors: [],
+      ds18b20_sensors: [],
+      actuators: [],
       blink: true,
       discovery: true,
     };
 
+    const provisionPanelResponse = async (url: string) => {
+      try {
+        await fetch(url, {
+          method: 'PUT',
+          headers: headers,
+          body: JSON.stringify(panelConfigurationPayload),
+        });
+      } catch (error) {
+        if (error.errno === 'ECONNRESET') {
+          this.log.info(
+            `The panel at http://${panelObject.ip}:${panelObject.port}/ has disconnected and is likely rebooting to apply new provisioning settings`
+          );
+        } else {
+          this.log.error(error);
+        }
+      }
+    };
+    provisionPanelResponse(panelSettingsEndpoint);
+
     // later example where we define pins
     // see: https://help.konnected.io/support/solutions/articles/32000026807-configuration
+    //
+    // we could also possibly write to the config.json to prepopulate the correct number of zones
+    // https://stackabuse.com/reading-and-writing-json-files-with-node-js/
+    //
+    // we need to test and implement:
+    // - invalidly assigned pins/zones for the different types of sensors and actuating alarms
+    //   (all panel device versions have certain pins/zones are limited to specific sensors or actuating sirens/etc)
+    // - likely need to check model of panel and compare pins against a predifined array of options for each model
+    //   (see: https://github.com/home-assistant/core/blob/dev/homeassistant/components/konnected/const.py#L23
+    //    and https://help.konnected.io/support/solutions/articles/32000028978-alarm-panel-pro-inputs-and-outputs)
+    // - need to create an array of items for the mapping of names of sensors in the plugin config settings to
+    //   the available sensors and actuators (eg. motion, glass/break, and contact sensors are simply "sensors", etc.)
     /*
     const panelConfigurationPayload = {
       endpoint_type: "rest",
@@ -257,37 +303,11 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
       discovery: true,
     };
     */
-
-    // we need to test and implement:
-    // - invalidly assigned pins/zones for the different types of sensors and actuating alarms
-    //   (all panel device versions have certain pins/zones are limited to specific sensors or actuating sirens/etc)
-    // - likely need to check model of panel and compare pins against a predifined array of options for each model
-    //   (see: https://github.com/home-assistant/core/blob/dev/homeassistant/components/konnected/const.py#L23
-    //    and https://help.konnected.io/support/solutions/articles/32000028978-alarm-panel-pro-inputs-and-outputs)
-    // - need to create an array of items for the mapping of names of sensors in the plugin config settings to
-    //   the available sensors and actuators (eg. motion, glass/break, and contact sensors are simply "sensors", etc.)
-
-    const provisionPanelResponse = async (url: string) => {
-      try {
-        const response = await fetch(url, {
-          method: 'PUT',
-          headers: headers,
-          body: JSON.stringify(panelConfigurationPayload),
-        });
-        const json = await response.json();
-        console.log(json);
-      } catch (error) {
-        console.log(error);
-      }
-    };
-
-    provisionPanelResponse(panelSettingsEndpoint);
   }
-
 
   /**
    * The Konnected alarm panels do not have any logic for an "alarm system"
-   * 
+   *
    * We need to provide alarm system logic that implements an alarm system with states:
    * - armed away: all sensors actively monitored for changes, countdown beeps from piezo, then trigger siren/flashing light
    * - armed home: only perimeter sensors actively monitored, countdown beeps from piezo, then trigger siren/flashing light
