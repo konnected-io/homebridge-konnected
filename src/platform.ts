@@ -121,79 +121,77 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
       .post(respond); // Alarm Panel Pro
   }
 
-
   /**
    * Discovers alarm panels on the network.
+   * https://help.konnected.io/support/solutions/articles/32000026805-discovery
+   *
+   * Konnected SSDP Search Targets:
+   * Alarm Panel V1/V2: urn:schemas-konnected-io:device:Security:1
+   * Alarm Panel Pro: urn:schemas-konnected-io:device:Security:2
    */
   discoverPanels() {
     const ssdpClient = new client.Client();
     const ssdpTimeout = (this.config.advanced?.discoveryTimeout || 10) * 1000;
     const ssdpUrnPartial = 'urn:schemas-konnected-io:device';
-    // urn:schemas-konnected-io:device:Security:1 // Alarm Panel V1/V2
-    // urn:schemas-konnected-io:device:Security:2 // Alarm Panel Pro
-
-    let ssdpHeaderLocation: string;
-    let ssdpHeaderUSN: string[] = []; // used for auth
     const ssdpDeviceIDs: string[] = []; // used later for deduping
 
     // begin discovery
     ssdpClient.search('ssdp:all');
 
     // on discovery
-    ssdpClient.on('response', (headers, statusCode, response) => {
+    ssdpClient.on('response', (headers) => {
       // check for only konnected devices
       if (headers.ST!.indexOf(ssdpUrnPartial) !== -1) {
-        ssdpHeaderLocation = headers.LOCATION || '';
-        ssdpHeaderUSN = headers.USN!.split('::') || [];
+        // store reported URL of panel that responded
+        const ssdpHeaderLocation: string = headers.LOCATION || '';
+        // extract UUID of panel from the USN string
+        const panelUUID: string = headers.USN!.match(/^uuid:(.*)::.*$/i)![1] || '';
 
         // console.log(ssdpHeaderUSN);
         // console.log(ssdpHeaderLocation);
-        console.log('headers:', headers);
+        // console.log('headers:', headers);
 
-        (async () => {
-          // de-duplicate responses and then provision panel(s)
-          if (!ssdpDeviceIDs.includes(ssdpHeaderUSN[0])) {
-            // add the mac address as the deviceID
-            ssdpDeviceIDs.push(ssdpHeaderUSN[0]);
+        // dedupe responses and then provision panel(s)
+        if (!ssdpDeviceIDs.includes(panelUUID)) {
+          // get panel status object (not using async await)
+          fetch(ssdpHeaderLocation.replace('Device.xml', 'status'))
+            // convert response to JSON
+            .then((fetchResponse) => fetchResponse.json())
+            .then((panelResponseObject) => {
+              // create listener object to pass back to panel when provisioning it
+              const listenerObject = {
+                ip: this.listenerIP,
+                port: this.listenerPort,
+              };
 
-            // fetch panel status
-            const fetchResponse = JSON.parse(
-              await (
-                await fetch(ssdpHeaderLocation.replace('Device.xml', 'status'))
-              ).text()
-            );
-            console.log('status:', fetchResponse);
+              // use the above information to construct panel in homebridge config
+              this.addPanelToConfig(panelUUID, panelResponseObject);
 
-            // if the settings property does not exist in the response, then we have an unprovisioned panel
-            if (Object.keys(fetchResponse.settings).length === 0) {
-              // provision panel
-              this.provisionPanel(
-                headers.ST!,
-                fetchResponse, 
-                {
-                  ip: this.listenerIP,
-                  port: this.listenerPort,
+              // if the settings property does not exist in the response, then we have an unprovisioned panel
+              if (Object.keys(panelResponseObject.settings).length === 0) {
+                this.provisionPanel(panelUUID, panelResponseObject, listenerObject);
+              } else {
+                const panelBroadcastEndpoint = new URL(panelResponseObject.settings.endpoint);
+                // if the IP address or port are not the same, reprovision endpoint component
+                if (
+                  panelBroadcastEndpoint.host !== this.listenerIP ||
+                  Number(panelBroadcastEndpoint.port) !== this.listenerPort
+                ) {
+                  this.provisionPanel(panelUUID, panelResponseObject, listenerObject);
                 }
-              );
-            } else {
-              const panelBroadcastEndpoint = new URL(fetchResponse.settings.endpoint);
-              // if the IP address or port are not the same, reprovision endpoint component
-              if (
-                panelBroadcastEndpoint.host !== this.listenerIP ||
-                Number(panelBroadcastEndpoint.port) !== this.listenerPort
-              ) {
-                this.provisionPanel(
-                  headers.ST!,
-                  fetchResponse,
-                  {
-                    ip: this.listenerIP,
-                    port: this.listenerPort,
-                  }
-                );
               }
-            }
-          }
-        })();
+            });
+          // if the panel does not respond, there's a severe error
+          /*
+          .catch((error) => {
+            this.log.error(`Cannot get panel ${panelUUID} status. ${error}`);
+            throw error;
+          });
+          */
+
+          // add the UUID to the deduping array
+          ssdpDeviceIDs.push(panelUUID);
+        }
       }
     });
 
