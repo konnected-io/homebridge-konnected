@@ -26,7 +26,7 @@ export class KonnectedPlatformAccessory {
 
     // set accessory information
     this.accessory.getService(this.platform.Service.AccessoryInformation)!
-      .setCharacteristic(this.platform.Characteristic.Manufacturer, 'Default-Manufacturer')
+      .setCharacteristic(this.platform.Characteristic.Manufacturer, this.platform.platformName)
       .setCharacteristic(this.platform.Characteristic.Model, 'Default-Model')
       .setCharacteristic(this.platform.Characteristic.SerialNumber, 'Default-Serial');
 
@@ -67,7 +67,7 @@ export class KonnectedPlatformAccessory {
       // push the new value to HomeKit
       this.service.updateCharacteristic(this.platform.Characteristic.Brightness, currentBrightness);
 
-      this.platform.log.debug('Pushed updated current Brightness state to HomeKit:', currentBrightness);
+      // this.platform.log.debug('Pushed [' + accessory.context.device.exampleDisplayName + '] updated Brightness state to HomeKit:', currentBrightness);
     }, 10000);
   }
 
@@ -80,11 +80,12 @@ export class KonnectedPlatformAccessory {
     // implement your own code to turn your device on/off
     this.exampleStates.On = value as boolean;
 
-    this.platform.log.debug('Set Characteristic On ->', value);
+    this.platform.log.debug('Set [' + this.accessory.context.device.exampleDisplayName + '] \'On\' Characteristic ->', value);
 
     // you must call the callback function
     callback(null);
   }
+
 
   /**
    * Handle the "GET" requests from HomeKit
@@ -104,13 +105,14 @@ export class KonnectedPlatformAccessory {
     // implement your own code to check if the device is on
     const isOn = this.exampleStates.On;
 
-    this.platform.log.debug('Get Characteristic On ->', isOn);
+    this.platform.log.debug('Get [' + this.accessory.context.device.exampleDisplayName + '] \'On\' Characteristic ->', isOn);
 
     // you must call the callback function
     // the first argument should be null if there were no errors
     // the second argument should be the value to return
     callback(null, isOn);
   }
+
 
   /**
    * Handle "SET" requests from HomeKit
@@ -121,7 +123,7 @@ export class KonnectedPlatformAccessory {
     // implement your own code to set the brightness
     this.exampleStates.Brightness = value as number;
 
-    this.platform.log.debug('Set Characteristic Brightness -> ', value);
+    this.platform.log.debug('Set [' + this.accessory.context.device.exampleDisplayName + '] \'Brightness\' Characteristic -> ', value);
 
     // you must call the callback function
     callback(null);
