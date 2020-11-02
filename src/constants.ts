@@ -23,22 +23,48 @@ export const ZONES = [
 /**
  * For V1/V2 Panels
  */
-export const PIN_TO_ZONE = {
+export const ZONES_TO_PINS = {
   1: 1,
   2: 2,
-  5: 3,
-  6: 4,
-  7: 5,
-  8: 'out',
-  9: 6,
+  3: 5,
+  4: 6,
+  5: 7,
+  6: 9,
+  out: 8,
 };
 
-export const ZONE_TO_PIN = {
-  '1': 1,
-  '2': 2,
-  '3': 5,
-  '4': 6,
-  '5': 7,
-  'out': 8,
-  '6': 9,
+export const ZONE_TYPES = {
+  sensors: [
+    'contact',
+    'motion',
+    'glass',
+    'water',
+    'smoke',
+  ],
+  dht_sensors: [
+    'temperature',
+  ],
+  ds18b20_sensors: [
+    'temphumid',
+    'temperature_humidity',
+  ],
+  actuators: [
+    'siren',
+    'strobe',
+    'switch',
+  ],
+};
+
+export const ZONE_TYPES_TO_ACCESSORIES = {
+  contact: 'ContactSensor',               // https://developers.homebridge.io/#/service/ContactSensor
+  motion: 'MotionSensor',                 // https://developers.homebridge.io/#/service/MotionSensor
+  glass: 'ContactSensor',                 // https://developers.homebridge.io/#/service/ContactSensor
+  water: 'LeakSensor',                    // https://developers.homebridge.io/#/service/LeakSensor
+  smoke: 'SmokeSensor',                   // https://developers.homebridge.io/#/service/SmokeSensor
+  temperature: 'TemperatureSensor',       // https://developers.homebridge.io/#/service/TemperatureSensor
+  temphumid: 'HumiditySensor',            // https://developers.homebridge.io/#/service/HumiditySensor
+  temperature_humidity: 'HumiditySensor', // https://developers.homebridge.io/#/service/HumiditySensor
+  siren: 'Speaker',                       // https://developers.homebridge.io/#/service/Speaker
+  strobe: 'Lightbulb',                    // https://developers.homebridge.io/#/service/Lightbulb
+  switch: 'Switch',                       // https://developers.homebridge.io/#/service/Switch
 };
