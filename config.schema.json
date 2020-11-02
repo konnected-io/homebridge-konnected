@@ -52,28 +52,25 @@
         "properties": {
           "name": {
             "title": "Panel Name",
-            "type": "string",
-            "default": "Alarm Panel 1",
-            "required": true
+            "type": "string"
           },
           "uuid": {
             "title": "UUID",
-            "type": "string"
+            "type": "string",
+            "readonly": true
           },
-          "macAddress": {
-            "title": "MAC Address",
-            "type": "string"
-          },
-          "IPAddress": {
+          "ipAddress": {
             "title": "IP Address",
-            "type": "string"
+            "type": "string",
+            "placeholder": "(optional)"
           },
           "zones": {
-            "description": "Customize the names and types of your zones.<br><span class='primary-text'>Please note that if you do not define your zones here or manually in the config.json, all zones will be considered open/close contact sensors.</span>",
+            "description": "Customize the names and types of your zones.<br><span class='primary-text'>You need to define your zones here to create sensor and actuator accessories in HomeKit.</span>",
             "type": "array",
             "maxItems": 15,
             "expandable": true,
             "expanded": false,
+            "uniqueItems": true,
             "items": {
               "type": "object",
               "properties": {
@@ -164,20 +161,20 @@
                       "enum": ["glass"]
                     },
                     {
-                      "title": "Smoke / CO Sensor",
-                      "enum": ["smoke"]
-                    },
-                    {
-                      "title": "Tempurature Sensor",
+                      "title": "Tempurature Sensor (eg. DS18B20)",
                       "enum": ["temperature"]
                     },
                     {
-                      "title": "Temperature / Humidity Sensor",
+                      "title": "Temperature / Humidity Sensor (eg. DHT)",
                       "enum": ["temphumid"]
                     },
                     {
                       "title": "Water Leak / Rain Sensor",
                       "enum": ["water"]
+                    },
+                    {
+                      "title": "Smoke / CO Sensor",
+                      "enum": ["smoke"]
                     },
                     {
                       "title": "Alarm Siren",
