@@ -275,12 +275,95 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
   }
 
   /**
-   * Provision alarm panel
+   * This is a constructor method to build the payload for assigning zone types on the panel.
+   * https://help.konnected.io/support/solutions/articles/32000026807-device-provisioning
+   * https://help.konnected.io/support/solutions/articles/32000026808-pin-mapping
+   * https://help.konnected.io/support/solutions/articles/32000028978-alarm-panel-pro-inputs-and-outputs
+   *
+   * @param panelObject object  The status response object of the plugin from discovery.
    */
-  provisionPanel(panelSSDPURN: string, panelObject: any, listenerObject: any) {
-    // need to first check our homebridge cache for existing panels with the mac address
-    // this will likely be done in the ssdp discovery, if they exist, skip this method entirely
+  configureZones(panelUUID: string, panelObject) {
+    const sensors: unknown[] = [];
+    const dht_sensors: unknown[] = [];
+    const ds18b20_sensors: unknown[] = [];
+    const actuators: unknown[] = [];
 
+    // if there are panels in the plugin config
+    if (typeof this.config.panels !== 'undefined') {
+      // loop through the available panels
+      for (const configPanel of this.config.panels) {
+        // isolate specific panel and make sure there are zones in that panel
+        if (configPanel.uuid === panelUUID && configPanel.zones) {
+          // variable for checking multiple zones with the same zoneNumber assigned
+          // (if users don't use Config UI X to generate their config)
+          const zonesCheck: number[] = [];
+
+          configPanel.zones.forEach((configPanelZone) => {
+            // create type interface for panelZone variable
+            interface PanelZone {
+              pin?: number;
+              zone?: number;
+            }
+            let panelZone: PanelZone;
+
+            // check if zoneNumber is a duplicate
+            if (!zonesCheck.includes(configPanelZone.zoneNumber)) {
+              // if not a duplicate, push it into the zoneCheck array
+              zonesCheck.push(configPanelZone.zoneNumber);
+
+              // V1/V2 vs Pro detection
+              if ('model' in panelObject) {
+                // this is a pro panel
+                panelZone = {
+                  zone: configPanelZone.zoneNumber,
+                };
+              } else {
+                // this is a V1/V2 panel
+                // convert zone to a pin
+                if (ZONES_TO_PINS[configPanelZone.zoneNumber]) {
+                  const zonePin = ZONES_TO_PINS[configPanelZone.zoneNumber];
+                  panelZone = {
+                    pin: zonePin,
+                  };
+                } else {
+                  panelZone = {};
+                  this.log.warn(
+                    `Invalid Zone: Cannot assign the zone number '${configPanelZone.zoneNumber}' for Konnected V1/V2 Alarm Panels.`
+                  );
+                }
+              }
+
+              if (ZONE_TYPES.sensors.includes(configPanelZone.zoneType)) {
+                sensors.push(panelZone);
+              } else if (ZONE_TYPES.dht_sensors.includes(configPanelZone.zoneType)) {
+                dht_sensors.push(panelZone);
+              } else if (ZONE_TYPES.ds18b20_sensors.includes(configPanelZone.zoneType)) {
+                ds18b20_sensors.push(panelZone);
+              } else if (ZONE_TYPES.actuators.includes(configPanelZone.zoneType)) {
+                actuators.push(panelZone);
+              }
+            } else {
+              this.log.warn(
+                `Duplicate Zone: Zone number '${configPanelZone.zoneNumber}' is assigned in two or more zones, please check your homebridge configuration for panel with UUID ${panelUUID}.`
+              );
+            }
+          });
+        }
+      }
+    }
+    // if there are no zones defined then we use our default blank array variables above this block
+
+    const panelZonesPayload = {
+      sensors: sensors,
+      dht_sensors: dht_sensors,
+      ds18b20_sensors: ds18b20_sensors,
+      actuators: actuators,
+    };
+
+    // this.registerAccessories(panelUUID, panelObject, panelZonesPayload);
+
+    return panelZonesPayload;
+  }
     const listeningEndpoint = `http://${listenerObject.ip}:${listenerObject.port}/api/konnected`;
     const panelSettingsEndpoint = `http://${panelObject.ip}:${panelObject.port}/settings`;
     const headers = { 'Content-Type': 'application/json' };
