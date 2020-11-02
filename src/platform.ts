@@ -202,6 +202,77 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
     }, ssdpTimeout);
   }
 
+  /**
+   * This method attempts to add panels to the Homebridge config file to help
+   * users with multiple konnected panel/board setups in their alarm system.
+   *
+   * @param panelUUID string  UUID for the panel as reported in the USN on discovery.
+   * @param panelObject object  The status response object of the plugin from discovery.
+   */
+  addPanelToConfig(panelUUID: string, panelObject) {
+    // console.log('passed in panelUUID: ', panelUUID);
+
+    // validate panel UUID
+    let validatedPanelUUID: string;
+    const uuidRegexPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]+$/gi;
+    if (panelUUID.match(uuidRegexPattern) !== null) {
+      validatedPanelUUID = panelUUID;
+    } else {
+      this.log.error(`${panelUUID} is an invalid UUID structure for the panel at ${panelObject.ip}`);
+      return;
+    }
+
+    // sanitize panel name
+    let panelName = typeof panelObject.model !== 'undefined' ? panelObject.model : 'Konnected V1/V2';
+    panelName = panelName.replace(/[^A-Za-z0-9\s/'":\-#.]/gi, ''); // sanitized
+
+    // create panel block with validated/sanitized panel name and UUID
+    const newPanel = {
+      name: panelName,
+      uuid: validatedPanelUUID,
+    };
+
+    // check backups/config-backups directory exists, if not use base storage directory
+    const backupPath = fs.existsSync(this.api.user.storagePath() + '/backups/config-backups/')
+      ? this.api.user.storagePath() + '/backups/config-backups/config.json.' + new Date().getTime()
+      : this.api.user.storagePath() + '/config.json.' + new Date().getTime();
+
+    // get homebridge config file
+    const configPath = this.api.user.configPath();
+    const configRawData = fs.readFileSync(configPath);
+    const configJsonObject = JSON.parse(configRawData.toString());
+
+    // copy config to new variable for alterations
+    const newConfigJsonObject = configJsonObject;
+
+    // if we can read the JSON from the config
+    if (newConfigJsonObject) {
+      // loop through platforms
+      for (const platform of newConfigJsonObject.platforms) {
+        // isolate konnected platform block
+        if (platform.platform === 'konnected') {
+          // if no panels defined in konnected platform config block
+          // OR
+          // we can't find the UUID property for the panel object in the panels array
+          if (typeof platform.panels === 'undefined' || !platform.panels.some((panel) => panel.uuid === panelUUID)) {
+            // if undefined, instantiate panels property as array
+            if (typeof platform.panels === 'undefined') {
+              platform.panels = [];
+            }
+
+            // push panel objects into panels array
+            platform.panels.push(newPanel);
+
+            // write backup config file
+            fs.writeFileSync(path.resolve(backupPath), JSON.stringify(configJsonObject, null, 4));
+
+            // write to config file
+            fs.writeFileSync(path.resolve(configPath), JSON.stringify(newConfigJsonObject, null, 4));
+          }
+        }
+      }
+    }
+  }
 
   /**
    * Provision alarm panel
