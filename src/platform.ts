@@ -8,13 +8,24 @@ import client from 'node-ssdp';      // for devices discovery
 import express from 'express';       // for the listening API
 import fetch from 'node-fetch';      // for making calls to the device
 import http from 'http';             // for creating a listening server
-import ip from 'ip';                 // for getting system active IP
+import path from 'path';             // for getting filesystem meta
+import fs from 'fs';                 // for working with the filesystem
+import ip from 'ip';                 // for getting active IP on the system
 import { v4 as uuidv4 } from 'uuid'; // for creating auth tokens
 
 /**
- * HomebridgePlatform
- * This class is the main constructor for your plugin, this is where you should
- * parse the user config and discover/register accessories with Homebridge.
+ * HomebridgePlatform Class
+ *
+ * This class is the main constructor of the Konnected Homebridge plugin.
+ *
+ * The following operations are performed when the plugin is loaded:
+ * - parse the user config
+ * - restore existing accessories
+ * - set up a listening server to listen for signals from the Konnected alarm panels and accessories
+ * - discovery of Konnected alarm panels on the network
+ * - add Konnected alarm panels to Homebridge config
+ * - provision Konnected alarm panels with zone/pin assignments
+ * - 
  */
 export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
   public readonly Service: typeof Service = this.api.hap.Service;
@@ -25,24 +36,19 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
   public readonly accessories: PlatformAccessory[] = [];
 
   // define shared variables here
-  public  platform:     string   = this.config.platform || PLATFORM; // konnected
-  public  platformName: string   = this.config.name || PLATFORM_NAME; // Konnected
-  public  pluginName:   string   = this.config.pluginName || PLUGIN_NAME; // homebridge-konnected
-  public  listenerIP:   string   = this.config.advanced?.listenerIP || ip.address(); // system defined primary network interface
-  public  listenerPort: number   = this.config.advanced?.listenerPort || 0; // zero = autochoose
+  public platform: string = this.config.platform || PLATFORM; // konnected
+  public platformName: string = this.config.name || PLATFORM_NAME; // Konnected
+  public pluginName: string = this.config.pluginName || PLUGIN_NAME; // homebridge-konnected
+  public listenerIP: string = this.config.advanced?.listenerIP || ip.address(); // system defined primary network interface
+  public listenerPort: number = this.config.advanced?.listenerPort || 0; // zero = autochoose
   private listenerAuth: string[] = []; // for storing random auth strings
+  // public configPath = process.env.UIX_CONFIG_PATH || path.resolve(os.homedir(), '.homebridge/config.json');
 
-  constructor(
-    public readonly log: Logger,
-    public readonly config: PlatformConfig,
-    public readonly api: API
-  ) {
+  constructor(public readonly log: Logger, public readonly config: PlatformConfig, public readonly api: API) {
     this.log.debug('Finished initializing platform');
 
-    // When this event is fired it means Homebridge has restored all cached accessories from disk.
-    // Dynamic Platform plugins should only register new accessories after this event was fired,
-    // in order to ensure they weren't added to homebridge already. This event can also be used
-    // to start discovery of new accessories.
+    // Homebridge looks for and fires this event when it has restored all cached accessories from disk
+    // this event is also used to init other methods for this plugin
     this.api.on('didFinishLaunching', () => {
       log.debug('Executed didFinishLaunching callback');
 
@@ -51,7 +57,6 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
       this.discoverPanels();
     });
   }
-
 
   /**
    * This function is invoked when homebridge restores cached accessories from disk at startup.
@@ -64,9 +69,9 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
     this.accessories.push(accessory);
   }
 
-
   /**
    * Creates a listening server for state changes from the alarm panel zones.
+   * https://help.konnected.io/support/solutions/articles/32000026814-sensor-state-callbacks
    */
   listeningServer() {
     const app = express();
@@ -76,7 +81,7 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
     server.listen(this.listenerPort, () => {
       // store port to its global variable
       this.listenerPort = server.address()!['port'];
-      this.log.info(`Listening for zone changes on ${ip.address()} port ${this.listenerPort}`);
+      this.log.info(`Listening for zone changes on ${this.listenerIP} port ${this.listenerPort}`);
     });
 
     // restart/crash cleanup
@@ -89,8 +94,7 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
     };
     process.on('SIGINT', cleanup).on('SIGTERM', cleanup);
 
-    const respond: any = (req, res) => {
-    
+    const respond = (req, res) => {
       // console.log(res);
 
       // validate bearer auth token
@@ -101,22 +105,38 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
         this.log.info(`Authentication successful for ${req.params.id}`);
         this.log.info('Authentication token:', req.headers.authorization.split('Bearer ').pop());
         this.log.info(req.body);
-        
+
         // NEXT:
         // call state change logic
         // check to see if that id exists
       } else {
         // send the following response
-        res.status(401).json({ success: false, reason: 'Authorization failed, token not valid' });
+        res.status(401).json({
+          success: false,
+          reason: 'Authorization failed, token not valid',
+        });
 
         this.log.error(`Authentication failed for ${req.params.id}, token not valid`);
         this.log.error('Authentication token:', req.headers.authorization.split('Bearer ').pop());
         this.log.error(req.body);
+        // this.log.error(req.connection.remoteAddress); // this is consistent from the panel
+        // this.log.error(req.connection.remotePort); // this is random from the panel
+
+        // NEXT:
+        // we need to reprovision the device with a new token
+        // we need to get the timing of when the device finishes its retry attempts and reboots
+        // after it reboots, there's a window of opportunity to re-provision the device
+
+        // PROBLEMS WITH REPROVISIONING:
+        // if we reprovision here, the reprovision task will run on each inbound request
+        // we need to make sure the reprovision is only called once for each device
+        // to allow the device to reboot with the new authentication creds, etc.
       }
     };
 
     // listen for requests at the following route/endpoint
-    app.route('/api/konnected/device/:id')
+    app
+      .route('/api/konnected/device/:id')
       .put(respond) // Alarm Panel V1/V2
       .post(respond); // Alarm Panel Pro
   }
@@ -423,58 +443,93 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
     provisionPanelResponse(panelSettingsEndpoint);
   }
 
-
   /**
    * This is an example method showing how to register discovered accessories.
    * Accessories must only be registered once, previously created accessories
    * must not be registered again to prevent "duplicate UUID" errors.
    */
-  registerPanelsAndZonesAsAccessories_NOTUSEDYET() {
+  registerAccessories(panelUUID: string, panelObject, panelZonesObject) {
+    const panelMacAddress = panelObject.panelMacAddress.replace(/:/g, '');
 
     // EXAMPLE ONLY
     // A real plugin you would discover accessories from the local network, cloud services
     // or a user-defined array in the platform config.
+
     const exampleDevices = [
       {
-        exampleUniqueId: 'ABCD',
-        exampleDisplayName: 'Bedroom',
+        exampleUniqueId: panelMacAddress + '-1',
+        exampleDisplayName: 'Test 1',
       },
       {
-        exampleUniqueId: 'EFGH',
-        exampleDisplayName: 'Kitchen',
+        exampleUniqueId: panelMacAddress + '-2',
+        exampleDisplayName: 'Test 2',
       },
     ];
 
+    // this.log.info('this.accessories:', this.accessories);
+
     // loop over the discovered devices and register each one if it has not already been registered
     for (const device of exampleDevices) {
-
       // generate a unique id for the accessory this should be generated from
       // something globally unique, but constant, for example, the device serial
       // number or MAC address
       const uuid = this.api.hap.uuid.generate(device.exampleUniqueId);
 
+      const existingAccessory = this.accessories.find((accessory) => accessory.UUID === uuid);
+
+      if (existingAccessory && existingAccessory.context.device.exampleUniqueId === device.exampleUniqueId) {
+        // this.api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM, [
+        //   existingAccessory,
+        // ]);
+      }
+
+      /*
       // see if an accessory with the same uuid has already been registered and restored from
       // the cached devices we stored in the `configureAccessory` method above
-      const existingAccessory = this.accessories.find(accessory => accessory.UUID === uuid);
+      const existingAccessory = this.accessories.find(
+        (accessory) => accessory.UUID === uuid
+      );
 
-      if (existingAccessory) {
-        // the accessory already exists
+      this.log.info(
+        'existingAccessory?.context.device.exampleUniqueId:',
+        existingAccessory?.context.device.exampleUniqueId
+      );
+
+      // check if the accessory already exists
+      if (
+        existingAccessory &&
+        existingAccessory.context.device.exampleUniqueId === device.exampleUniqueId
+      ) {
+
         this.log.info('Restoring existing accessory from cache:', existingAccessory.displayName);
 
-        // if you need to update the accessory.context then you should run `api.updatePlatformAccessories`. eg.:
-        // existingAccessory.context.device = device;
-        // this.api.updatePlatformAccessories([existingAccessory]);
+        existingAccessory.context.device = device;
+        this.api.updatePlatformAccessories([existingAccessory]);
 
         // create the accessory handler for the restored accessory
         // this is imported from `platformAccessory.ts`
         new KonnectedPlatformAccessory(this, existingAccessory);
 
+      } else if (
+        existingAccessory &&
+        existingAccessory.context.device.exampleUniqueId !== device.exampleUniqueId
+      ) {
+
+        this.log.info('Removing accessory from cache:', existingAccessory.displayName);
+
+        this.api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM, [
+          existingAccessory,
+        ]);
+
       } else {
-        // the accessory does not yet exist, so we need to create it
+
         this.log.info('Adding new accessory:', device.exampleDisplayName);
 
         // create a new accessory
-        const accessory = new this.Accessory(device.exampleDisplayName, uuid);
+        const accessory = new this.api.platformAccessory(
+          device.exampleDisplayName,
+          uuid
+        );
 
         // store a copy of the device object in the `accessory.context`
         // the `context` property can be used to store any data about the accessory you may need
@@ -485,13 +540,40 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
         new KonnectedPlatformAccessory(this, accessory);
 
         // link the accessory to your platform
-        this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM, [accessory]);
-      }
+        this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM, [
+          accessory,
+        ]);
 
-      // it is possible to remove platform accessories at any time using `api.unregisterPlatformAccessories`, eg.:
-      // this.api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM, [accessory]);
+      }
+      */
     }
 
+    return panelZonesObject;
   }
 
+  /**
+   * Actuate siren/light/switch method
+   * @param device
+   */
+  actuateAccessory(device) {
+    // check if accessory actuatable
+
+    console.log(device);
+  }
+
+  /**
+   * The Konnected alarm panels do not have any logic for an "alarm system"
+   *
+   * We need to provide alarm system logic that implements an alarm system with states:
+   * - armed away: all sensors actively monitored for changes, countdown beeps from piezo, then trigger siren/flashing light
+   * - armed home: only perimeter sensors actively monitored, countdown beeps from piezo, then trigger siren/flashing light
+   * - armed night: only perimeter sensors actively monitored, immediately trigger siren/flashing light with no countdown beeps from piezo
+   * - disarmed: when sensors change state, check an option for momentary piezo beeps for change, but siren is never triggered
+   *
+   * We will likely need to make a call to a NoonLight method here at some point
+   */
+  registerAlarmSystem() {
+    // when the alarm system is registered, then register zone accessories
+    // this.registerAccessories();
+  }
 }
