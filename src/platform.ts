@@ -1,7 +1,7 @@
 import { API, DynamicPlatformPlugin, Logger, PlatformAccessory, PlatformConfig, Service, Characteristic } from 'homebridge';
 
 import { PLATFORM, PLATFORM_NAME, PLUGIN_NAME } from './settings';
-import { ZONES, PIN_TO_ZONE, ZONE_TO_PIN } from './constants';
+import { ZONES, ZONES_TO_PINS, ZONE_TYPES } from './constants';
 import { KonnectedPlatformAccessory } from './platformAccessory';
 
 import client from 'node-ssdp';      // for devices discovery
