@@ -68,3 +68,44 @@ export const ZONE_TYPES_TO_ACCESSORIES = {
   strobe: 'Lightbulb',                    // https://developers.homebridge.io/#/service/Lightbulb
   switch: 'Switch',                       // https://developers.homebridge.io/#/service/Switch
 };
+
+export const ZONE_TYPES_TO_NAMES = {
+  contact: 'Contact Sensor',
+  motion: 'Motion Sensor',
+  glass: 'Glass Break Sensor',
+  water: 'Water Sensor',
+  smoke: 'Smoke Sensor',
+  temperature: 'Temperature Sensor',
+  temphumid: 'Humidity Sensor',
+  temperature_humidity: 'Humidity Sensor',
+  siren: 'Alarm Siren',
+  strobe: 'Alarm Strobe Light',
+  switch: 'Switch',
+};
+
+/**
+ * This is a common object structure that is returned from the panels.
+ */
+export interface PanelObjectInterface {
+  gw: string;
+  nm: string;
+  ip: string;
+  port: number;
+  mac: string;
+  rssi: number;
+  hwVersion: string;
+  settings: {
+    endpoint: string;
+    endpoint_type: string;
+  };
+  uptime: number;
+  swVersion: string;
+  actuators: [];
+  dht_sensors: [];
+  ds18b20_sensors: [];
+  sensors: [];
+  heap: number;
+  chipId?: string;
+  model?: string;
+  connection_type?: string;
+}
