@@ -223,13 +223,13 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
   }
 
   /**
-   * This method attempts to add panels to the Homebridge config file to help
-   * users with multiple konnected panel/board setups in their alarm system.
+   * This method adds panels to the Homebridge config file to help users
+   * with multiple konnected panel/board setups in their alarm system.
    *
    * @param panelUUID string  UUID for the panel as reported in the USN on discovery.
-   * @param panelObject object  The status response object of the plugin from discovery.
+   * @param panelObject PanelObjectInterface  The status response object of the plugin from discovery.
    */
-  addPanelToConfig(panelUUID: string, panelObject) {
+  addPanelToConfig(panelUUID: string, panelObject: PanelObjectInterface) {
     // console.log('passed in panelUUID: ', panelUUID);
 
     // validate panel UUID
@@ -300,9 +300,9 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
    * https://help.konnected.io/support/solutions/articles/32000026808-pin-mapping
    * https://help.konnected.io/support/solutions/articles/32000028978-alarm-panel-pro-inputs-and-outputs
    *
-   * @param panelObject object  The status response object of the plugin from discovery.
+   * @param panelObject PanelObjectInterface  The status response object of the plugin from discovery.
    */
-  configureZones(panelUUID: string, panelObject) {
+  configureZones(panelUUID: string, panelObject: PanelObjectInterface) {
     const sensors: unknown[] = [];
     const dht_sensors: unknown[] = [];
     const ds18b20_sensors: unknown[] = [];
@@ -333,7 +333,7 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
 
               // V1/V2 vs Pro detection
               if ('model' in panelObject) {
-                // this is a pro panel
+                // this is a Pro panel
                 panelZone = {
                   zone: configPanelZone.zoneNumber,
                 };
@@ -390,10 +390,11 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
    * and to register the zones on the board according to their configured settings in this plugin.
    * https://help.konnected.io/support/solutions/articles/32000026807-device-provisioning
    *
-   * @param panelObject object  The status response object of the plugin from discovery.
+   * @param panelUUID string  UUID for the panel as reported in the USN on discovery.
+   * @param panelObject PanelObjectInterface  The status response object of the plugin from discovery.
    * @param listenerObject object  Details object for this plugin's listening server.
    */
-  provisionPanel(panelUUID: string, panelObject, listenerObject) {
+  provisionPanel(panelUUID: string, panelObject: PanelObjectInterface, listenerObject) {
     const listeningEndpoint = `http://${listenerObject.ip}:${listenerObject.port}/api/konnected`;
     const panelSettingsEndpoint = `http://${panelObject.ip}:${panelObject.port}/settings`;
 
