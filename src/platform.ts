@@ -362,6 +362,13 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
               } else if (ZONE_TYPES.actuators.includes(configPanelZone.zoneType)) {
                 actuators.push(panelZone);
               }
+
+              // register the zone with homebridge/homekit
+              this.registerZoneAsAccessory(panelUUID, panelObject, {
+                zoneNumber: configPanelZone.zoneNumber,
+                zoneType: configPanelZone.zoneType,
+                zoneLocation: configPanelZone.zoneLocation,
+              });
             } else {
               this.log.warn(
                 `Duplicate Zone: Zone number '${configPanelZone.zoneNumber}' is assigned in two or more zones, please check your homebridge configuration for panel with UUID ${panelUUID}.`
@@ -379,8 +386,6 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
       ds18b20_sensors: ds18b20_sensors,
       actuators: actuators,
     };
-
-    // this.registerAccessories(panelUUID, panelObject, panelZonesPayload);
 
     return panelZonesPayload;
   }
@@ -445,121 +450,150 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
   }
 
   /**
-   * This is an example method showing how to register discovered accessories.
-   * Accessories must only be registered once, previously created accessories
-   * must not be registered again to prevent "duplicate UUID" errors.
+   * This method registers panel zones as accessories in homebridge.
+   *
+   * @param panelUUID string  UUID for the panel as reported in the USN on discovery.
+   * @param panelObject PanelObjectInterface  The status response object of the plugin from discovery.
+   * @param panelZoneObject object  Zone object with zone number and zone type.
    */
-  registerAccessories(panelUUID: string, panelObject, panelZonesObject) {
-    const panelMacAddress = panelObject.panelMacAddress.replace(/:/g, '');
+  registerZoneAsAccessory(
+    panelUUID: string,
+    panelObject: PanelObjectInterface,
+    panelZoneObject: {
+      zoneNumber: string;
+      zoneType: string;
+      zoneLocation: string;
+    }
+  ) {
 
-    // EXAMPLE ONLY
-    // A real plugin you would discover accessories from the local network, cloud services
-    // or a user-defined array in the platform config.
+    const panelShortUUID: string = panelUUID.match(/([^-]+)$/i)![1];
+    const panelModel = 'model' in panelObject ? 'Pro' : 'V1/V2';
 
-    const exampleDevices = [
-      {
-        exampleUniqueId: panelMacAddress + '-1',
-        exampleDisplayName: 'Test 1',
-      },
-      {
-        exampleUniqueId: panelMacAddress + '-2',
-        exampleDisplayName: 'Test 2',
-      },
-    ];
+    const device = {
+      UUID: this.api.hap.uuid.generate(panelShortUUID + '-' + panelZoneObject.zoneNumber),
+      displayName: panelZoneObject.zoneLocation + ' ' + ZONE_TYPES_TO_NAMES[panelZoneObject.zoneType],
+      type: panelZoneObject.zoneType,
+      model: panelModel + ' ' + ZONE_TYPES_TO_NAMES[panelZoneObject.zoneType],
+      serialNumber: panelShortUUID + '-' + panelZoneObject.zoneNumber,
+    };
+
+    console.log(device);
 
     // this.log.info('this.accessories:', this.accessories);
 
-    // loop over the discovered devices and register each one if it has not already been registered
-    for (const device of exampleDevices) {
-      // generate a unique id for the accessory this should be generated from
-      // something globally unique, but constant, for example, the device serial
-      // number or MAC address
-      const uuid = this.api.hap.uuid.generate(device.exampleUniqueId);
+    // see if an accessory with the same uuid has already been registered and restored from
+    // the cached devices we stored in the `configureAccessory` method above
+    const existingAccessory = this.accessories.find((accessory) => accessory.UUID === device.UUID);
 
-      const existingAccessory = this.accessories.find((accessory) => accessory.UUID === uuid);
+    // check if the accessory already exists
+    if (existingAccessory && existingAccessory.context.device.UUID === device.UUID) {
+      this.log.info('Restoring existing accessory from cache:', `${existingAccessory.displayName} (${existingAccessory.UUID})`);
 
-      if (existingAccessory && existingAccessory.context.device.exampleUniqueId === device.exampleUniqueId) {
-        // this.api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM, [
-        //   existingAccessory,
-        // ]);
-      }
+      existingAccessory.context.device = device;
 
-      /*
-      // see if an accessory with the same uuid has already been registered and restored from
-      // the cached devices we stored in the `configureAccessory` method above
-      const existingAccessory = this.accessories.find(
-        (accessory) => accessory.UUID === uuid
-      );
+      // create the accessory handler for the restored accessory
+      // this is imported from `platformAccessory.ts`
+      new KonnectedPlatformAccessory(this, existingAccessory);
 
-      this.log.info(
-        'existingAccessory?.context.device.exampleUniqueId:',
-        existingAccessory?.context.device.exampleUniqueId
-      );
+      // update accessory in platform and homekit
+      this.api.updatePlatformAccessories([existingAccessory]);
 
-      // check if the accessory already exists
-      if (
-        existingAccessory &&
-        existingAccessory.context.device.exampleUniqueId === device.exampleUniqueId
-      ) {
+      // otherwise if it doesn't exist
+    } else {
+      this.log.info('Adding new accessory:', `${device.displayName} (${device.UUID})`);
 
-        this.log.info('Restoring existing accessory from cache:', existingAccessory.displayName);
+      // create a new accessory
+      const accessory = new this.api.platformAccessory(device.displayName, device.UUID);
 
-        existingAccessory.context.device = device;
-        this.api.updatePlatformAccessories([existingAccessory]);
+      // store a copy of the device object in the platform accessory
+      accessory.context.device = device;
 
-        // create the accessory handler for the restored accessory
-        // this is imported from `platformAccessory.ts`
-        new KonnectedPlatformAccessory(this, existingAccessory);
+      // create the accessory handler for the newly create accessory
+      // this is imported from `platformAccessory.ts`
+      new KonnectedPlatformAccessory(this, accessory);
 
-      } else if (
-        existingAccessory &&
-        existingAccessory.context.device.exampleUniqueId !== device.exampleUniqueId
-      ) {
-
-        this.log.info('Removing accessory from cache:', existingAccessory.displayName);
-
-        this.api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM, [
-          existingAccessory,
-        ]);
-
-      } else {
-
-        this.log.info('Adding new accessory:', device.exampleDisplayName);
-
-        // create a new accessory
-        const accessory = new this.api.platformAccessory(
-          device.exampleDisplayName,
-          uuid
-        );
-
-        // store a copy of the device object in the `accessory.context`
-        // the `context` property can be used to store any data about the accessory you may need
-        accessory.context.device = device;
-
-        // create the accessory handler for the newly create accessory
-        // this is imported from `platformAccessory.ts`
-        new KonnectedPlatformAccessory(this, accessory);
-
-        // link the accessory to your platform
-        this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM, [
-          accessory,
-        ]);
-
-      }
-      */
+      // link accessory to your platform and homekit
+      this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM, [accessory]);
     }
-
-    return panelZonesObject;
   }
 
   /**
-   * Actuate siren/light/switch method
-   * @param device
+   * This method removes panel zones as accessories in homebridge & homekit.
+   *
+   * @param panelUUID string  UUID for the panel as reported in the USN on discovery.
+   * @param panelObject PanelObjectInterface  The status response object of the plugin from discovery.
+   * @param panelZoneObject object  Zone object with zone number and zone type.
    */
-  actuateAccessory(device) {
-    // check if accessory actuatable
+  unRegisterZoneAsAccessory(
+    panelUUID: string,
+    panelObject: PanelObjectInterface,
+    panelZoneObject: {
+      zoneNumber: string;
+      zoneType: string;
+      zoneLocation: string;
+    }
+  ) {
+    console.log('panelUUID:', panelUUID);
+    console.log('panelObject:', panelObject);
+    console.log('panelZoneObject:', panelZoneObject);
+
+    const panelShortUUID: string = panelUUID.match(/([^-]+)$/i)![1];
+    const panelModel = 'model' in panelObject ? panelObject.model : 'Konnected V1/V2';
+
+    const device = {
+      // UUID: this.api.hap.uuid.generate(panelShortUUID + '-' + panelZoneObject.zoneNumber)
+      UUID: panelShortUUID + '-' + panelZoneObject.zoneNumber,
+      displayName: panelZoneObject.zoneLocation + ' ' + ZONE_TYPES_TO_NAMES[panelZoneObject.zoneType],
+      model: panelModel + ' ' + ZONE_TYPES_TO_NAMES[panelZoneObject.zoneType],
+    };
 
     console.log(device);
+
+    // this.log.info('this.accessories:', this.accessories);
+
+    // see if an accessory with the same uuid has already been registered and restored from
+    // the cached devices we stored in the `configureAccessory` method above
+    const existingAccessory = this.accessories.find((accessory) => accessory.UUID === device.UUID);
+
+    this.log.info('existingAccessory?.context.device.UUID:', existingAccessory?.context.device.UUID);
+
+    // check if the accessory already exists
+    if (existingAccessory && existingAccessory.context.device.exampleUniqueId === device.UUID) {
+      this.log.info('Restoring existing accessory from cache:', existingAccessory.displayName);
+
+      existingAccessory.context.device = device;
+
+      // create the accessory handler for the restored accessory
+      // this is imported from `platformAccessory.ts`
+      // new KonnectedPlatformAccessory(this, existingAccessory);
+
+      // update accessory in platform and homekit
+      // this.api.updatePlatformAccessories([existingAccessory]);
+
+      // otherwise if it doesn't exist
+    } else if (existingAccessory && existingAccessory.context.device.exampleUniqueId !== device.UUID) {
+      this.log.info('Removing accessory from cache:', existingAccessory.displayName);
+
+      // remove accessory from platform and homekit
+      // this.api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM, [existingAccessory]);
+
+      // otherwise if it doesn't exist
+    } else {
+      this.log.info('Adding new accessory:', device.UUID);
+
+      // create a new accessory
+      const accessory = new this.api.platformAccessory(device.displayName, device.UUID);
+
+      // store a copy of the device object in the platform accessory
+      accessory.context.device = device;
+
+      // create the accessory handler for the newly create accessory
+      // this is imported from `platformAccessory.ts`
+      // new KonnectedPlatformAccessory(this, accessory);
+
+      // link accessory to your platform and homekit
+      // this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM, [accessory]);
+    }
   }
 
   /**
@@ -576,5 +610,15 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
   registerAlarmSystem() {
     // when the alarm system is registered, then register zone accessories
     // this.registerAccessories();
+  }
+
+  /**
+   * Actuate siren/light/switch method
+   * @param device
+   */
+  actuateAccessory(device) {
+    // check if accessory actuatable
+
+    console.log(device);
   }
 }
