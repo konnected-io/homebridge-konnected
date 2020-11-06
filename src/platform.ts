@@ -38,13 +38,10 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
   public readonly accessories: PlatformAccessory[] = [];
 
   // define shared variables here
-  public platform: string = this.config.platform || PLATFORM; // konnected
-  public platformName: string = this.config.name || PLATFORM_NAME; // Konnected
-  public pluginName: string = this.config.pluginName || PLUGIN_NAME; // homebridge-konnected
-  public listenerIP: string = this.config.advanced?.listenerIP || ip.address(); // system defined primary network interface
-  public listenerPort: number = this.config.advanced?.listenerPort || 0; // zero = autochoose
+  public listenerIP = this.config.advanced.listenerIP || ip.address(); // system defined primary network interface
+  public listenerPort: number = this.config.advanced.listenerPort || 0; // zero = autochoose
   private listenerAuth: string[] = []; // for storing random auth strings
-  // public configPath = process.env.UIX_CONFIG_PATH || path.resolve(os.homedir(), '.homebridge/config.json');
+  private ssdpDiscovering = false; // for storing state of SSDP discovery process
 
   constructor(public readonly log: Logger, public readonly config: PlatformConfig, public readonly api: API) {
     this.log.debug('Finished initializing platform');
