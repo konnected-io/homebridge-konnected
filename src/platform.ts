@@ -2,6 +2,7 @@ import { API, DynamicPlatformPlugin, Logger, PlatformAccessory, PlatformConfig, 
 
 import { PLATFORM, PLATFORM_NAME, PLUGIN_NAME } from './settings';
 import { ZONES_TO_PINS, ZONE_TYPES, ZONE_TYPES_TO_NAMES, PanelObjectInterface } from './constants';
+import { ReplaceCircular } from './utilities';
 import { KonnectedPlatformAccessory } from './platformAccessory';
 
 import client from 'node-ssdp';      // for devices discovery
