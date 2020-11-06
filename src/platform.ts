@@ -109,6 +109,11 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
         // call state change logic
         // check to see if that id exists
       } else {
+        // rediscover and reprovision panels
+        if (this.ssdpDiscovering === false) {
+          this.discoverPanels();
+        }
+
         // send the following response
         res.status(401).json({
           success: false,
@@ -153,6 +158,9 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
     const ssdpTimeout = (this.config.advanced?.discoveryTimeout || 10) * 1000;
     const ssdpUrnPartial = 'urn:schemas-konnected-io:device';
     const ssdpDeviceIDs: string[] = []; // used later for deduping
+
+    // set discovery state
+    this.ssdpDiscovering = true;
 
     // begin discovery
     ssdpClient.search('ssdp:all');
@@ -217,6 +225,7 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
     // stop discovery after a number of seconds seconds, default is 10
     setTimeout(() => {
       ssdpClient.stop();
+      this.ssdpDiscovering = false;
       console.log('devices:', ssdpDeviceIDs);
     }, ssdpTimeout);
   }
