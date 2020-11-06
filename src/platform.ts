@@ -94,7 +94,7 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
     process.on('SIGINT', cleanup).on('SIGTERM', cleanup);
 
     const respond = (req, res) => {
-      // console.log(res);
+      // console.log(JSON.stringify(ReplaceCircular(req), null, 4));
 
       // validate bearer auth token
       if (this.listenerAuth.includes(req.headers.authorization.split('Bearer ').pop())) {
