@@ -141,16 +141,18 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
     // listen for requests at the following route/endpoint
     app
       .route('/api/konnected/device/:id')
-      .put(respond) // Alarm Panel V1/V2
+      .put(respond) // Alarm Panel V1-V2
       .post(respond); // Alarm Panel Pro
   }
+
+  
 
   /**
    * Discovers alarm panels on the network.
    * https://help.konnected.io/support/solutions/articles/32000026805-discovery
    *
    * Konnected SSDP Search Targets:
-   * Alarm Panel V1/V2: urn:schemas-konnected-io:device:Security:1
+   * Alarm Panel V1-V2: urn:schemas-konnected-io:device:Security:1
    * Alarm Panel Pro: urn:schemas-konnected-io:device:Security:2
    */
   discoverPanels() {
@@ -251,7 +253,7 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
     }
 
     // sanitize panel name
-    let panelName = typeof panelObject.model !== 'undefined' ? panelObject.model : 'Konnected V1/V2';
+    let panelName = typeof panelObject.model !== 'undefined' ? panelObject.model : 'Konnected V1-V2';
     panelName = panelName.replace(/[^A-Za-z0-9\s/'":\-#.]/gi, ''); // sanitized
 
     // create panel block with validated/sanitized panel name and UUID
@@ -339,14 +341,14 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
               // if not a duplicate, push it into the zoneCheck array
               zonesCheck.push(configPanelZone.zoneNumber);
 
-              // V1/V2 vs Pro detection
+              // V1-V2 vs Pro detection
               if ('model' in panelObject) {
                 // this is a Pro panel
                 panelZone = {
                   zone: configPanelZone.zoneNumber,
                 };
               } else {
-                // this is a V1/V2 panel
+                // this is a V1-V2 panel
                 // convert zone to a pin
                 if (ZONES_TO_PINS[configPanelZone.zoneNumber]) {
                   const zonePin = ZONES_TO_PINS[configPanelZone.zoneNumber];
@@ -356,7 +358,7 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
                 } else {
                   panelZone = {};
                   this.log.warn(
-                    `Invalid Zone: Cannot assign the zone number '${configPanelZone.zoneNumber}' for Konnected V1/V2 Alarm Panels.`
+                    `Invalid Zone: Cannot assign the zone number '${configPanelZone.zoneNumber}' for Konnected V1-V2 Alarm Panels.`
                   );
                 }
               }
@@ -434,7 +436,7 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
     if ('model' in panelObject) {
       this.log.info('Provisioning PRO panel...');
     } else {
-      this.log.info('Provisioning V1/V2 panel...');
+      this.log.info('Provisioning V1-V2 panel...');
     }
 
     const provisionPanelResponse = async (url: string) => {
@@ -473,9 +475,8 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
       zoneLocation: string;
     }
   ) {
-
     const panelShortUUID: string = panelUUID.match(/([^-]+)$/i)![1];
-    const panelModel = 'model' in panelObject ? 'Pro' : 'V1/V2';
+    const panelModel = 'model' in panelObject ? 'Pro' : 'V1-V2';
 
     const device = {
       UUID: this.api.hap.uuid.generate(panelShortUUID + '-' + panelZoneObject.zoneNumber),
@@ -546,7 +547,7 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
     console.log('panelZoneObject:', panelZoneObject);
 
     const panelShortUUID: string = panelUUID.match(/([^-]+)$/i)![1];
-    const panelModel = 'model' in panelObject ? panelObject.model : 'Konnected V1/V2';
+    const panelModel = 'model' in panelObject ? panelObject.model : 'Konnected V1-V2';
 
     const device = {
       // UUID: this.api.hap.uuid.generate(panelShortUUID + '-' + panelZoneObject.zoneNumber)
