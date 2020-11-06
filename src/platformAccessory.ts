@@ -1,5 +1,6 @@
-import { Service, PlatformAccessory, CharacteristicValue, CharacteristicSetCallback, CharacteristicGetCallback } from 'homebridge';
+import { Service, PlatformAccessory, CharacteristicGetCallback } from 'homebridge';
 
+import { PLATFORM_NAME } from './settings';
 import { ZONE_TYPES_TO_ACCESSORIES } from './constants';
 import { KonnectedHomebridgePlatform } from './platform';
 
@@ -16,7 +17,7 @@ export class KonnectedPlatformAccessory {
    * You should implement your own code to track the state of your accessory
    */
   private binarySensorState = {
-    open: false,
+    ContactSensorState: 1,
   }
 
   constructor(
@@ -25,7 +26,7 @@ export class KonnectedPlatformAccessory {
   ) {
     // set accessory information
     this.accessory.getService(this.platform.Service.AccessoryInformation)!
-      .setCharacteristic(this.platform.Characteristic.Manufacturer, this.platform.platformName)
+      .setCharacteristic(this.platform.Characteristic.Manufacturer, PLATFORM_NAME)
       .setCharacteristic(this.platform.Characteristic.Model, accessory.context.device.model)
       .setCharacteristic(this.platform.Characteristic.SerialNumber, accessory.context.device.SerialNumber);
     // .setCharacteristic(this.platform.Characteristic.FirmwareRevision, accessory.context.device.FirmwareVersion)
@@ -33,9 +34,7 @@ export class KonnectedPlatformAccessory {
 
     // get the device service if it exists, otherwise create a new device service
     // you can create multiple services for each accessory
-    this.service =
-      this.accessory.getService(this.platform.Service[ZONE_TYPES_TO_ACCESSORIES[accessory.context.device.type]]) ||
-      this.accessory.addService(this.platform.Service[ZONE_TYPES_TO_ACCESSORIES[accessory.context.device.type]]);
+    this.service = this.accessory.getService(this.platform.Service.ContactSensor) || this.accessory.addService(this.platform.Service.ContactSensor);
 
     // To avoid "Cannot add a Service with the same UUID another Service without also defining a unique 'subtype' property." error,
     // when creating multiple services of the same type, you need to use the following syntax to specify a name and subtype id:
@@ -48,9 +47,10 @@ export class KonnectedPlatformAccessory {
     // see https://developers.homebridge.io/#/service/Lightbulb
 
     // register handlers for the Open/Closed Characteristic
-    this.service.getCharacteristic(this.platform.Characteristic.ContactSensorState).on('get', this.getState.bind(this)); // GET - bind to the `getState` method below
+    this.service.getCharacteristic(this.platform.Characteristic.ContactSensorState)
+      .on('get', this.getState.bind(this)); // GET - bind to the `getState` method below
 
-    this.service.updateCharacteristic(this.platform.Characteristic.ContactSensorState, 0);
+    this.service.updateCharacteristic(this.platform.Characteristic.ContactSensorState, 1);
   }
 
   /**
@@ -69,9 +69,11 @@ export class KonnectedPlatformAccessory {
   getState(callback: CharacteristicGetCallback) {
 
     // implement your own code to check if the device is on
-    const isOpen = this.binarySensorState.open;
+    const isOpen = this.binarySensorState.ContactSensorState;
 
-    this.platform.log.debug(`Get [${this.accessory.context.device.displayName}] 'Open' Characteristic -> ${isOpen}`);
+    this.platform.log.debug(
+      `Get [${this.accessory.context.device.displayName}] 'ContactSensorState' Characteristic -> ${isOpen}`
+    );
 
     // you must call the callback function
     // the first argument should be null if there were no errors
