@@ -82,30 +82,3 @@ export const ZONE_TYPES_TO_NAMES = {
   strobe: 'Alarm Strobe Light',
   switch: 'Switch',
 };
-
-/**
- * This is a common object structure that is returned from the panels.
- */
-export interface PanelObjectInterface {
-  gw: string;
-  nm: string;
-  ip: string;
-  port: number;
-  mac: string;
-  rssi: number;
-  hwVersion: string;
-  settings: {
-    endpoint: string;
-    endpoint_type: string;
-  };
-  uptime: number;
-  swVersion: string;
-  actuators: [];
-  dht_sensors: [];
-  ds18b20_sensors: [];
-  sensors: [];
-  heap: number;
-  chipId?: string;
-  model?: string;
-  connection_type?: string;
-}
