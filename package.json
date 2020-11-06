@@ -1,7 +1,7 @@
 {
   "displayName": "Konnected Security",
   "name": "homebridge-konnected",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Konnected Alarm Panel plugin for Homebridge",
   "author": "Mike Kormendy <mike@somethinginteractive.com> (https://mikekormendy.com)",
   "contributors": [
