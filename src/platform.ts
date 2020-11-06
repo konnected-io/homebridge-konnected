@@ -1,7 +1,8 @@
 import { API, DynamicPlatformPlugin, Logger, PlatformAccessory, PlatformConfig, Service, Characteristic } from 'homebridge';
 
-import { PLATFORM, PLATFORM_NAME, PLUGIN_NAME } from './settings';
-import { ZONES_TO_PINS, ZONE_TYPES, ZONE_TYPES_TO_NAMES, PanelObjectInterface } from './constants';
+import { PLATFORM, PLUGIN_NAME } from './settings';
+import { ZONES_TO_PINS, ZONE_TYPES, ZONE_TYPES_TO_NAMES } from './constants';
+import { PanelObjectInterface } from './interfaces';
 import { ReplaceCircular } from './utilities';
 import { KonnectedPlatformAccessory } from './platformAccessory';
 
