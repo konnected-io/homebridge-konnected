@@ -200,7 +200,7 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
               if (Object.keys(panelResponseObject.settings).length === 0) {
                 this.provisionPanel(panelUUID, panelResponseObject, listenerObject);
               } else {
-                const panelBroadcastEndpoint = new URL(panelResponseObject.settings.endpoint);
+                const panelBroadcastEndpoint = new URL(`https://${panelResponseObject.settings.endpoint}`);
                 // if the IP address or port are not the same, reprovision endpoint component
                 if (
                   panelBroadcastEndpoint.host !== this.listenerIP ||
