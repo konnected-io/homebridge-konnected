@@ -1,7 +1,6 @@
 import { Service, PlatformAccessory, CharacteristicGetCallback } from 'homebridge';
 
-import { PLATFORM_NAME } from './settings';
-import { ZONE_TYPES_TO_ACCESSORIES } from './constants';
+// import { ZONE_TYPES_TO_ACCESSORIES } from './constants';
 import { KonnectedHomebridgePlatform } from './platform';
 
 /**
