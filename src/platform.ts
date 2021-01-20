@@ -1,7 +1,7 @@
 import { API, DynamicPlatformPlugin, Logger, PlatformAccessory, PlatformConfig, Service, Characteristic } from 'homebridge';
 
 import { PLATFORM_NAME, PLUGIN_NAME } from './settings';
-import { ZONES_TO_PINS, ZONE_TYPES, ZONE_TYPES_TO_NAMES } from './constants';
+import { ZONES, ZONES_TO_PINS, ZONE_TYPES, ZONE_TYPES_TO_ACCESSORIES, ZONE_TYPES_TO_NAMES } from './constants';
 import { PanelObjectInterface } from './interfaces';
 // import { ReplaceCircular } from './utilities';
 import { KonnectedPlatformAccessory } from './platformAccessory';
@@ -34,25 +34,46 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
   public readonly Characteristic: typeof Characteristic = this.api.hap.Characteristic;
   public readonly Accessory: typeof PlatformAccessory = this.api.platformAccessory;
 
-  // this is used to track restored Homebridge/Homekit representational versions of accessories from the cache
+  // this is used to track restored Homebridge/HomeKit representational versions of accessories from the cache
   public readonly accessories: PlatformAccessory[] = [];
 
-  // this is used to store an accessible reference to inialized accessories
+  // this is used to store an accessible reference to inialized accessories (used in accessory cache disk writes - don't update this often)
   public readonly konnectedPlatformAccessories = {};
 
+  // this is used to store a non-blocking state of the accessories
+  // this saves having to make network requests to the boards for states, which can cause delayed 'no-response' flag on the tiles in homekit
+  // the konnected boards mostly do the pushing of states of sensors to Homebridge and update their states in Homebridge (and consequently
+  // homekit) at that time, but when homekit does it's own interval of polling, the states don't change inbetween those polls
+  public zoneStatesCache: Record<string, unknown>[] = [];
+
   // define shared variables here
-  public listenerIP = this.config.advanced.listenerIP || ip.address(); // system defined primary network interface
-  public listenerPort: number = this.config.advanced.listenerPort || 0; // zero = autochoose
+  private listenerIP: string =
+    'advanced' in this.config
+      ? 'listenerIP' in this.config.advanced
+        ? this.config.advanced.listenerIP
+        : ip.address()
+      : ip.address(); // system defined primary network interface
+
+  private listenerPort: number =
+    'advanced' in this.config ? ('listenerPort' in this.config.advanced ? this.config.advanced.listenerPort : 0) : 0; // zero = autochoose
+
+  private ssdpTimeout: number =
+    'advanced' in this.config
+      ? 'discoveryTimeout' in this.config.advanced
+        ? this.config.advanced.discoveryTimeout * 1000
+        : 5000
+      : 5000; // 5 seconds
+
   private listenerAuth: string[] = []; // for storing random auth strings
   private ssdpDiscovering = false; // for storing state of SSDP discovery process
 
   constructor(public readonly log: Logger, public readonly config: PlatformConfig, public readonly api: API) {
     this.log.debug('Finished initializing platform');
 
-    // Homebridge looks for and fires this event when it has restored all cached accessories from disk
+    // Homebridge looks for and fires this event when it has retrieved all cached accessories from disk
     // this event is also used to init other methods for this plugin
     this.api.on('didFinishLaunching', () => {
-      log.debug('Executed didFinishLaunching callback');
+      log.debug('Executed didFinishLaunching callback. Accessories retreived from cache...');
 
       // run the listening server & discover panels
       this.listeningServer();
@@ -61,17 +82,17 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
   }
 
   /**
-   * This function is invoked when homebridge restores cached accessories from disk at startup.
+   * This function is invoked when Homebridge restores cached accessories from disk at startup.
    */
   configureAccessory(accessory: PlatformAccessory) {
-    this.log.info('Loading accessory from cache:', accessory.displayName);
+    this.log.info(`Loading accessory from cache: ${accessory.displayName} (${accessory.UUID})`);
 
     // add the restored accessory to the accessories cache so we can track if it has already been registered
     this.accessories.push(accessory);
   }
 
   /**
-   * Creates a listening server for state changes from the alarm panel zones.
+   * Creates a listening server for status and state changes from panels and zones.
    * https://help.konnected.io/support/solutions/articles/32000026814-sensor-state-callbacks
    */
   listeningServer() {
@@ -96,7 +117,6 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
     process.on('SIGINT', cleanup).on('SIGTERM', cleanup);
 
     const respond = (req, res) => {
-      // console.log(JSON.stringify(ReplaceCircular(req), null, 4));
 
       // bearer auth token not provided
       if (typeof req.headers.authorization === 'undefined') {
@@ -112,47 +132,11 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
 
       // validate provided bearer auth token
       if (this.listenerAuth.includes(req.headers.authorization.split('Bearer ').pop())) {
-
         // send the following response
         res.status(200).json({ success: true });
 
-        this.log.debug(`Authentication successful for ${req.params.id}`);
-        this.log.debug('Authentication token:', req.headers.authorization.split('Bearer ').pop());
-
-        let deviceZone = '';
-        if ('pin' in req.body) {
-          // convert a pin to a zone
-          Object.entries(ZONES_TO_PINS).map(([key, value]) => {
-            if (value === req.body.pin) {
-              deviceZone = key;
-              this.log.debug(req.body, `(zone: ${deviceZone})`);
-            }
-          });
-        } else {
-          // use the zone
-          deviceZone = req.body.zone;
-          this.log.debug(req.body);
-        }
-
-        const deviceUUID = this.api.hap.uuid.generate(req.params.id + '-' + deviceZone);
-
-        const existingAccessory = this.accessories.find((accessory) => accessory.UUID === deviceUUID);
-
-        // check if the accessory already exists
-        if (existingAccessory && existingAccessory.context.device.UUID === deviceUUID) {
-          this.log.info(
-            'Received state change for',
-            `${existingAccessory.displayName} (${existingAccessory.UUID})`
-          );
-
-          // update accessory in the platform and Homekit
-          this.konnectedPlatformAccessories[existingAccessory.UUID].service.updateCharacteristic(
-            this.Characteristic.ContactSensorState,
-            req.body.state
-          );
-
-        }
-
+        // process the update of the state
+        this.updateAccessoryState(req);
       } else {
         // rediscover and reprovision panels
         if (this.ssdpDiscovering === false) {
@@ -168,14 +152,12 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
         this.log.error(`Authentication failed for ${req.params.id}, token not valid`);
         this.log.error('Authentication token:', req.headers.authorization.split('Bearer ').pop());
         this.log.error(req.body);
-        // this.log.error(req.connection.remoteAddress); // this is consistent from the panel
-        // this.log.error(req.connection.remotePort); // this is random from the panel
-
       }
     };
 
     // listen for requests at the following route/endpoint
-    app.route('/api/konnected/device/:id')
+    app
+      .route('/api/konnected/device/:id')
       .put(respond) // Alarm Panel V1-V2
       .post(respond); // Alarm Panel Pro
   }
@@ -189,11 +171,7 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
    * Alarm Panel Pro: urn:schemas-konnected-io:device:Security:2
    */
   discoverPanels() {
-    // first remove all accessories (this cleans out stale/accessories)
-    // this.api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, this.accessories);
-
     const ssdpClient = new client.Client();
-    const ssdpTimeout = (this.config.advanced?.discoveryTimeout || 10) * 1000;
     const ssdpUrnPartial = 'urn:schemas-konnected-io:device';
     const ssdpDeviceIDs: string[] = []; // used later for deduping
 
@@ -212,9 +190,6 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
         // extract UUID of panel from the USN string
         const panelUUID: string = headers.USN!.match(/^uuid:(.*)::.*$/i)![1] || '';
 
-        // console.log(ssdpHeaderLocation);
-        // console.log('headers:', headers);
-
         // dedupe responses and then provision panel(s)
         if (!ssdpDeviceIDs.includes(panelUUID)) {
           // get panel status object (not using async await)
@@ -228,7 +203,7 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
                 port: this.listenerPort,
               };
 
-              // use the above information to construct panel in homebridge config
+              // use the above information to construct panel in Homebridge config
               this.addPanelToConfig(panelUUID, panelResponseObject);
 
               // if the settings property does not exist in the response,
@@ -248,7 +223,7 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
                   }
                 } else if (panelResponseObject.settings.endpoint_type === 'aws_iot') {
                   this.log.error(
-                    `ERROR: Panel ${panelUUID} has already been provisioned to use the Konnected Cloud. Please submit a ticket to de-register your panel from the Konnected Cloud before provisioning it with Homebridge: https://help.konnected.io/support/tickets/new`
+                    `ERROR: Panel ${panelUUID} has previously been provisioned to use the Konnected Cloud and cannot be provisioned by Homebridge until you de-register your panel from the Konnected Cloud and factory reset it. Please use the Konnected mobile app to de-regester the panel from the Konnected Cloud.`
                   );
                 }
               }
@@ -267,12 +242,12 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
       }
     });
 
-    // stop discovery after a number of seconds seconds, default is 10
+    // stop discovery after a number of seconds seconds, default is 5
     setTimeout(() => {
       ssdpClient.stop();
       this.ssdpDiscovering = false;
       console.log('devices:', ssdpDeviceIDs);
-    }, ssdpTimeout);
+    }, this.ssdpTimeout);
   }
 
   /**
@@ -283,8 +258,6 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
    * @param panelObject PanelObjectInterface  The status response object of the plugin from discovery.
    */
   addPanelToConfig(panelUUID: string, panelObject: PanelObjectInterface) {
-    // console.log('passed in panelUUID: ', panelUUID);
-
     // validate panel UUID
     let validatedPanelUUID: string;
     const uuidRegexPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]+$/gi;
@@ -303,6 +276,8 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
     const newPanel = {
       name: panelName,
       uuid: validatedPanelUUID,
+      ipAddress: panelObject.ip,
+      port: panelObject.port,
     };
 
     // check backups/config-backups directory exists, if not use base storage directory
@@ -310,7 +285,7 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
       ? this.api.user.storagePath() + '/backups/config-backups/config.json.' + new Date().getTime()
       : this.api.user.storagePath() + '/config.json.' + new Date().getTime();
 
-    // get homebridge config file
+    // get Homebridge config file
     const configPath = this.api.user.configPath();
     const configRawData = fs.readFileSync(configPath);
     const configJsonObject = JSON.parse(configRawData.toString());
@@ -324,8 +299,7 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
       for (const platform of newConfigJsonObject.platforms) {
         // isolate konnected platform block
         if (platform.platform === 'konnected') {
-          // if no panels defined in konnected platform config block
-          // OR
+          // if no panels defined in konnected platform config block or
           // we can't find the UUID property for the panel object in the panels array
           if (typeof platform.panels === 'undefined' || !platform.panels.some((panel) => panel.uuid === panelUUID)) {
             // if undefined, instantiate panels property as array
@@ -348,11 +322,77 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
   }
 
   /**
-   * This is a constructor method to build the payload for assigning zone types on the panel.
+   * This method provisions alarm panel boards with information to communicate with this plugin
+   * and to register the zones on the board according to their configured settings in this plugin.
    * https://help.konnected.io/support/solutions/articles/32000026807-device-provisioning
-   * https://help.konnected.io/support/solutions/articles/32000026808-pin-mapping
-   * https://help.konnected.io/support/solutions/articles/32000028978-alarm-panel-pro-inputs-and-outputs
    *
+   * @param panelUUID string  UUID for the panel as reported in the USN on discovery.
+   * @param panelObject PanelObjectInterface  The status response object of the plugin from discovery.
+   * @param listenerObject object  Details object for this plugin's listening server.
+   */
+  provisionPanel(panelUUID: string, panelObject: PanelObjectInterface, listenerObject) {
+    let panelIP: string = panelObject.ip;
+    let panelPort: number = panelObject.port;
+    let panelBlink = true;
+
+    // if there are panels in the plugin config
+    if (typeof this.config.panels !== 'undefined') {
+      // loop through the available panels
+      for (const configPanel of this.config.panels) {
+        // isolate specific panel and make sure there are zones in that panel
+        if (configPanel.uuid === panelUUID) {
+          panelIP = configPanel.ipAddress ? configPanel.ipAddress : panelObject.ip;
+          panelPort = configPanel.port ? configPanel.port : panelObject.port;
+          panelBlink = typeof configPanel.blink !== 'undefined' ? configPanel.blink : true;
+        }
+      }
+    }
+
+    const listeningEndpoint = `http://${listenerObject.ip}:${listenerObject.port}/api/konnected`;
+    const panelSettingsEndpoint = `http://${panelIP}:${panelPort}/settings`;
+
+    const bearerAuthToken = uuidv4(); // generate an RFC4122 compliant UUID
+    this.listenerAuth.push(bearerAuthToken); // add to array for listening authorization
+
+    const panelPayloadCore = {
+      endpoint_type: 'rest',
+      endpoint: listeningEndpoint,
+      token: bearerAuthToken,
+      blink: panelBlink,
+      discovery: true,
+    };
+
+    const panelPayloadAccessories = this.configureZones(panelUUID, panelObject);
+
+    const panelConfigurationPayload = {
+      ...panelPayloadCore,
+      ...panelPayloadAccessories,
+    };
+
+    const provisionPanelResponse = async (url: string) => {
+      try {
+        await fetch(url, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(panelConfigurationPayload),
+        });
+      } catch (error) {
+        if (error.errno === 'ECONNRESET') {
+          this.log.info(
+            `The panel at ${url} has disconnected and is likely rebooting to apply new provisioning settings`
+          );
+        } else {
+          this.log.error(error);
+        }
+      }
+    };
+    provisionPanelResponse(panelSettingsEndpoint);
+  }
+
+  /**
+   * This is a constructor method to build the payload for assigning zone types on the panel.
+   *
+   * @param panelUUID string  The unique identifier for the panel itself.
    * @param panelObject PanelObjectInterface  The status response object of the plugin from discovery.
    */
   configureZones(panelUUID: string, panelObject: PanelObjectInterface) {
@@ -361,14 +401,23 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
     const ds18b20_sensors: unknown[] = [];
     const actuators: unknown[] = [];
 
+    const retainedAccessories: unknown[] = [];
+
     // if there are panels in the plugin config
     if (typeof this.config.panels !== 'undefined') {
-
       // storage variable for the array of zones
-      const accessoriesArray: Record<string, unknown>[] = [];
+      const zoneObjectsArray: Record<string, unknown>[] = [];
 
       // loop through the available panels
       for (const configPanel of this.config.panels) {
+        // If there's a chipId in the panelObject, use that, or use mac address.
+        // V1/V2 panels only have one interface (WiFi). Panels with chipId are Pro versions
+        // with two network interfaces (WiFi & Ethernet) with separate mac addresses.
+        // If one network interface goes down, the board can fallback to the other
+        // interface and the accessories lose their associated UUID, which can
+        // result in duplicated accessories, half of which become non-responsive.
+        const panelShortUUID: string = 'chipId' in panelObject ? panelUUID.match(/([^-]+)$/i)![1] : panelObject.mac.replace(/:/g, '');
+
         // isolate specific panel and make sure there are zones in that panel
         if (configPanel.uuid === panelUUID && configPanel.zones) {
           // variable for deduping zones with the same zoneNumber
@@ -381,52 +430,63 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
               pin?: number;
               zone?: number;
             }
-            let panelZone: PanelZone;
+            let panelZone: PanelZone = {};
 
-            // V1-V2 vs Pro detection
+            // Pro vs V1-V2 detection
             if ('model' in panelObject) {
               // this is a Pro panel
-              panelZone = {
-                zone: configPanelZone.zoneNumber,
-              };
+              // check if zone is improperly assigned as the V1-V2 panel 'out' zone
+              if (configPanelZone.zoneNumber === 'out') {
+                this.log.warn(
+                  'Invalid Zone: Konnected Pro Alarm Panels do not have a zone named \'out\', change the zone assignment to \'alarm1\', \'out1\', or \'alarm2_out2\'.'
+                );
+              } else if (ZONE_TYPES.actuators.includes(configPanelZone.zoneType)) {
+                // this zone is assigned as an actuator
+                // validate if zone can be an actuator/switch
+                if (ZONES[configPanelZone.zoneNumber].includes(configPanelZone.zoneType)) {
+                  panelZone = {
+                    zone: configPanelZone.zoneNumber,
+                  };
+                } else {
+                  this.log.warn(
+                    `Invalid Zone: Konnected Pro Alarm Panels cannot have zone ${configPanelZone.zoneNumber} as an actuator/switch. Try zones 1-8, alarm1, out1, or alarm2_out2.`
+                  );
+                }
+              } else {
+                panelZone = {
+                  zone: configPanelZone.zoneNumber,
+                };
+              }
             } else {
               // this is a V1-V2 panel
               // convert zone to a pin
               if (ZONES_TO_PINS[configPanelZone.zoneNumber]) {
-                const zonePin = ZONES_TO_PINS[configPanelZone.zoneNumber];
                 panelZone = {
-                  pin: zonePin,
+                  pin: ZONES_TO_PINS[configPanelZone.zoneNumber],
                 };
               } else {
-                panelZone = {};
                 this.log.warn(
-                  `Invalid Zone: Cannot assign the zone number '${configPanelZone.zoneNumber}' for Konnected V1-V2 Alarm Panels.`
+                  `Invalid Zone: Cannot assign the zone number '${configPanelZone.zoneNumber}' for Konnected V1-V2 Alarm Panels. Try zones `
                 );
               }
             }
 
-            // put panelZone into the correct device type for the panel
-            if (ZONE_TYPES.sensors.includes(configPanelZone.zoneType)) {
-              sensors.push(panelZone);
-            } else if (ZONE_TYPES.dht_sensors.includes(configPanelZone.zoneType)) {
-              dht_sensors.push(panelZone);
-            } else if (ZONE_TYPES.ds18b20_sensors.includes(configPanelZone.zoneType)) {
-              ds18b20_sensors.push(panelZone);
-            } else if (ZONE_TYPES.actuators.includes(configPanelZone.zoneType)) {
-              actuators.push(panelZone);
+            // check if the panel object is not empty (this will cause a boot loop if it's empty)
+            if (Object.keys(panelZone).length > 0) {
+              // put panelZone into the correct device type for the panel
+              if (ZONE_TYPES.sensors.includes(configPanelZone.zoneType)) {
+                sensors.push(panelZone);
+              } else if (ZONE_TYPES.dht_sensors.includes(configPanelZone.zoneType)) {
+                dht_sensors.push(panelZone);
+              } else if (ZONE_TYPES.ds18b20_sensors.includes(configPanelZone.zoneType)) {
+                ds18b20_sensors.push(panelZone);
+              } else if (ZONE_TYPES.actuators.includes(configPanelZone.zoneType)) {
+                actuators.push(panelZone);
+              }
             }
 
-            // If there's a chip ID in the panelObject, use that, or use mac address.
-            // V1/V2 panels only have one interface (WiFi). Panels with chipID are Pro versions
-            // with two network interfaces (WiFi & Ethernet) with separate mac addresses.
-            // If one network interface goes down, the board can fallback to the other
-            // interface and the accessories lose their associated UUID, which can
-            // result in duplicated accessories, half of which become non-responsive.
-            const panelShortUUID: string =
-              'chipId' in panelObject ? panelUUID.match(/([^-]+)$/i)![1] : panelObject.mac.replace(/:/g, '');
-
             // genereate unique ID for zone
-            const zoneUUID = this.api.hap.uuid.generate(panelShortUUID + '-' + configPanelZone.zoneNumber);
+            const zoneUUID: string = this.api.hap.uuid.generate(panelShortUUID + '-' + configPanelZone.zoneNumber);
 
             // if there's a model in the panelObject, that means the panel is Pro
             const panelModel: string = 'model' in panelObject ? 'Pro' : 'V1-V2';
@@ -436,31 +496,41 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
               // if not a duplicate, push the zone's UUID into the zoneCheck array
               zonesCheck.push(zoneUUID);
 
+              const displayName = configPanelZone.zoneLocation ? configPanelZone.zoneLocation + ' ' : '';
+
               const zoneObject = {
                 UUID: zoneUUID,
-                displayName: configPanelZone.zoneLocation + ' ' + ZONE_TYPES_TO_NAMES[configPanelZone.zoneType],
+                displayName: displayName + ZONE_TYPES_TO_NAMES[configPanelZone.zoneType],
                 type: configPanelZone.zoneType,
                 model: panelModel + ' ' + ZONE_TYPES_TO_NAMES[configPanelZone.zoneType],
                 serialNumber: panelShortUUID + '-' + configPanelZone.zoneNumber,
+                panel: panelObject,
               };
 
-              console.log('device:', zoneObject);
+              zoneObjectsArray.push(zoneObject);
+              this.zoneStatesCache.push(zoneObject);
 
-              accessoriesArray.push(zoneObject);
+              // match this zone's UUID to the UUID of an accessory stored in the global accessories cache
+              // store accessory object in an array of retained accessories that we don't want unregistered in Homebridge and HomeKit
+              if (typeof this.accessories.find((accessory) => accessory.UUID === zoneUUID) !== undefined) {
+                retainedAccessories.push(this.accessories.find((accessory) => accessory.UUID === zoneUUID));
+              }
             } else {
               this.log.warn(
-                `Duplicate Zone: Zone number '${configPanelZone.zoneNumber}' is assigned in two or more zones, please check your homebridge configuration for panel with UUID ${panelUUID}.`
+                `Duplicate Zone: Zone number '${configPanelZone.zoneNumber}' is assigned in two or more zones, please check your Homebridge configuration for panel with UUID ${panelUUID}.`
               );
             }
-          });
+          }); // end foreach loop (zones)
 
-          // register the zones as accessories in Homebridge and Homekit
-          this.registerZonesAsAccessories(accessoriesArray);
+          // Now attempt to register the zones as accessories in Homebridge and HomeKit
+          this.accessoryRegistrationController(panelShortUUID, zoneObjectsArray, retainedAccessories);
+        } else if (configPanel.uuid === panelUUID && typeof configPanel.zones === 'undefined') {
+          this.accessoryRegistrationController(panelShortUUID, [], []);
         }
-      }
+      } // end for-of loop (panels)
     }
-    // if there are no zones defined then we use our default blank array variables above this block
 
+    // if there are no zones defined then we use our default blank array variables above this block
     const panelZonesPayload = {
       sensors: sensors,
       dht_sensors: dht_sensors,
@@ -472,105 +542,99 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
   }
 
   /**
-   * This method provisions alarm panel boards with information to communicate with this plugin
-   * and to register the zones on the board according to their configured settings in this plugin.
-   * https://help.konnected.io/support/solutions/articles/32000026807-device-provisioning
+   * Accessory controller to add, update, and remove panel zones as accessories in Homebridge (and HomeKit).
    *
-   * @param panelUUID string  UUID for the panel as reported in the USN on discovery.
-   * @param panelObject PanelObjectInterface  The status response object of the plugin from discovery.
-   * @param listenerObject object  Details object for this plugin's listening server.
+   * @param panelShortUUID string  The panel short UUID for the panel of zones being passed in.
+   * @param zoneObjectsArray array  An array of constructed zoneObjects.
+   * @param retainedAccessoriesArray array  An array of retained accessory objects.
    */
-  provisionPanel(panelUUID: string, panelObject: PanelObjectInterface, listenerObject) {
-    const listeningEndpoint = `http://${listenerObject.ip}:${listenerObject.port}/api/konnected`;
-    const panelSettingsEndpoint = `http://${panelObject.ip}:${panelObject.port}/settings`;
+  accessoryRegistrationController(panelShortUUID, zoneObjectsArray, retainedAccessoriesArray) {
+    // console.log('zoneObjectsArray', zoneObjectsArray);
+    // console.log('retainedAccessoriesArray:', retainedAccessoriesArray);
 
-    const bearerAuthToken = uuidv4(); // generate an RFC4122 compliant UUID
-    this.listenerAuth.push(bearerAuthToken); // add to array for listening authorization
-    // console.log('this.listenerAuth:', this.listenerAuth);
-    // console.log('token:', bearerAuthToken);
+    // remove any stale accessories
+    ///////////////////////////////
 
-    const panelPayloadCore = {
-      endpoint_type: 'rest',
-      endpoint: listeningEndpoint,
-      token: bearerAuthToken,
-      blink: true,
-      discovery: true,
-    };
+    const accessoriesToRemoveArray = this.accessories
+      .filter(
+        // filter in accessories with same panel
+        (accessory) => accessory.context.device.serialNumber.split('-')[0] === panelShortUUID
+      )
+      .filter(
+        // filter out retained accessories
+        (accessory) => !retainedAccessoriesArray.includes(accessory)
+      );
 
-    const panelPayloadAccessories = this.configureZones(panelUUID, panelObject);
-
-    const panelConfigurationPayload = {
-      ...panelPayloadCore,
-      ...panelPayloadAccessories,
-    };
-
-    if ('model' in panelObject) {
-      this.log.info('Provisioning PRO panel...');
-    } else {
-      this.log.info('Provisioning V1-V2 panel...');
+    if (Array.isArray(retainedAccessoriesArray) && retainedAccessoriesArray!.length > 0) {
+      retainedAccessoriesArray.forEach((accessory) => {
+        if (typeof accessory !== 'undefined') {
+          this.log.debug(`Retained accessory: ${accessory.displayName} (${accessory.UUID}`);
+        }
+      });
     }
 
-    const provisionPanelResponse = async (url: string) => {
-      try {
-        await fetch(url, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(panelConfigurationPayload),
-        });
-      } catch (error) {
-        if (error.errno === 'ECONNRESET') {
-          this.log.info(
-            `The panel at http://${panelObject.ip}:${panelObject.port}/ has disconnected and is likely rebooting to apply new provisioning settings`
-          );
-        } else {
-          this.log.error(error);
-        }
-      }
-    };
-    provisionPanelResponse(panelSettingsEndpoint);
-  }
+    if (Array.isArray(accessoriesToRemoveArray) && accessoriesToRemoveArray!.length > 0) {
+      // unregister stale or missing zones/accessories in Homebridge and HomeKit
+      accessoriesToRemoveArray.forEach((accessory) => {
+        this.log.info(
+          `Removing stale accessory: ${accessory.displayName} (${accessory.context.device.model} :: ${accessory.UUID})`
+        );
+      });
+      this.api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, accessoriesToRemoveArray);
+    }
 
-  /**
-   * This method registers panel zones as accessories in homebridge.
-   *
-   * @param panelUUID string  UUID for the panel as reported in the USN on discovery.
-   * @param panelObject PanelObjectInterface  The status response object of the plugin from discovery.
-   * @param panelZoneObject object  Zone object with zone number and zone type.
-   */
-  registerZonesAsAccessories(accessoriesArray) {
+    // update or create accessories
+    ///////////////////////////////
 
-    // here we loop through the passed in array of zones and register them as accessories
-    accessoriesArray.forEach((panelZoneObject) => {
-      // see if an accessory with the same uuid has already been registered and restored from
-      // the cached devices we stored in the `configureAccessory` method above
-      const existingAccessory = this.accessories.find((accessory) => accessory.UUID === panelZoneObject.UUID);
+    const accessoriesToUpdateArray: PlatformAccessory[] = [];
+    const accessoriesToAddArray: PlatformAccessory[] = [];
 
-      // check if the accessory already exists
+    zoneObjectsArray.forEach((panelZoneObject) => {
+      // find Homebridge cached accessories with the same uuid as those in the config
+      const existingAccessory = this.accessories.find((accessory) => panelZoneObject.UUID === accessory.UUID);
+
       if (existingAccessory && existingAccessory.context.device.UUID === panelZoneObject.UUID) {
-        this.log.info('Restoring existing accessory from cache:', `${existingAccessory.displayName} (${existingAccessory.UUID})`);
+        // then the accessory already exists
+        this.log.info(
+          `Updating existing accessory: ${panelZoneObject.displayName} (${panelZoneObject.model} :: ${panelZoneObject.UUID})`
+        );
 
         // update zone object in the platform accessory cache
+        existingAccessory.displayName = panelZoneObject.displayName;
         existingAccessory.context.device = panelZoneObject;
+        // store a direct reference to the initialized accessory with service and characteristics in the KonnectedPlatformAccessories object
+        this.konnectedPlatformAccessories[panelZoneObject.UUID] = new KonnectedPlatformAccessory(
+          this,
+          existingAccessory
+        );
 
-        // store a direct reference to the initialized accessory in the KonnectedPlatformAccessories object
-        this.konnectedPlatformAccessories[panelZoneObject.UUID] = new KonnectedPlatformAccessory(this, existingAccessory);
+        accessoriesToUpdateArray.push(existingAccessory);
       } else {
-        this.log.info('Adding new accessory:', `${panelZoneObject.displayName} (${panelZoneObject.UUID})`);
+        // otherwise we're adding a new accessory
+        this.log.info(
+          `Adding new accessory: ${panelZoneObject.displayName} (${panelZoneObject.model} :: ${panelZoneObject.UUID})`
+        );
 
-        // create a new accessory
-        const accessory = new this.api.platformAccessory(panelZoneObject.displayName, panelZoneObject.UUID);
-
+        // build Homebridge/HomeKit platform accessory
+        const newAccessory = new this.api.platformAccessory(panelZoneObject.displayName, panelZoneObject.UUID);
         // store zone object in the platform accessory cache
-        accessory.context.device = panelZoneObject;
+        newAccessory.context.device = panelZoneObject;
+        // store a direct reference to the initialized accessory with service and characteristics in the KonnectedPlatformAccessories object
+        this.konnectedPlatformAccessories[panelZoneObject.UUID] = new KonnectedPlatformAccessory(this, newAccessory);
 
-        // store a direct reference to the initialized accessory in the KonnectedPlatformAccessories object
-        this.konnectedPlatformAccessories[panelZoneObject.UUID] = new KonnectedPlatformAccessory(this, accessory);
-
-        // link accessory to your platform and homekit
-        this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
+        accessoriesToAddArray.push(newAccessory);
       }
     });
 
+    if (Array.isArray(accessoriesToUpdateArray) || accessoriesToUpdateArray!.length) {
+      // update zones/accessories in Homebridge and HomeKit
+      this.api.updatePlatformAccessories(accessoriesToUpdateArray);
+    }
+
+    if (Array.isArray(accessoriesToAddArray) || accessoriesToAddArray!.length) {
+      // add zones/accessories to Homebridge and HomeKit
+      this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, accessoriesToAddArray);
+    }
   }
 
   /**
@@ -585,17 +649,215 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
    * We will likely need to make a call to a NoonLight method here at some point
    */
   registerAlarmSystem() {
-    // when the alarm system is registered, then register zone accessories
-    // this.registerAccessories();
+    // for future
   }
 
   /**
-   * Actuate siren/light/switch method
+   * Updates the cached zone state when a panel reports a change in the zone's state.
+   *
+   * @param req object  The request payload received for the zone at this plugin's listener REST endpoint.
+   */
+  updateAccessoryState(req) {
+    let deviceZone = '';
+    let deviceState = '';
+    if ('pin' in req.body) {
+      // convert a pin to a zone
+      Object.entries(ZONES_TO_PINS).map(([key, value]) => {
+        if (value === req.body.pin) {
+          deviceZone = key;
+          deviceState = JSON.stringify(req.body) + ` (zone: ${deviceZone})`;
+        }
+      });
+    } else {
+      // use the zone
+      deviceZone = req.body.zone;
+      deviceState = JSON.stringify(req.body);
+    }
+
+    const zoneUUID = this.api.hap.uuid.generate(req.params.id + '-' + deviceZone);
+
+    const existingAccessory = this.accessories.find((accessory) => accessory.UUID === zoneUUID);
+
+    // check if the accessory already exists
+    if (existingAccessory) {
+      this.log.debug(`${existingAccessory.displayName} (${existingAccessory.UUID}):`, deviceState);
+
+      // loop through the accessories state cache and update state and service characteristic
+      this.zoneStatesCache.forEach((accessory) => {
+        if (accessory.UUID === zoneUUID) {
+          switch (ZONE_TYPES_TO_ACCESSORIES[existingAccessory.context.device.type]) {
+            case 'ContactSensor':
+              accessory.state = req.body.state;
+              this.konnectedPlatformAccessories[existingAccessory.UUID].service.updateCharacteristic(
+                this.Characteristic.ContactSensorState,
+                req.body.state
+              );
+              break;
+            case 'MotionSensor':
+              accessory.state = req.body.state;
+              this.konnectedPlatformAccessories[existingAccessory.UUID].service.updateCharacteristic(
+                this.Characteristic.MotionDetected,
+                req.body.state
+              );
+              break;
+            case 'LeakSensor':
+              accessory.state = req.body.state;
+              this.konnectedPlatformAccessories[existingAccessory.UUID].service.updateCharacteristic(
+                this.Characteristic.LeakDetected,
+                req.body.state
+              );
+              break;
+            case 'SmokeSensor':
+              accessory.state = req.body.state;
+              this.konnectedPlatformAccessories[existingAccessory.UUID].service.updateCharacteristic(
+                this.Characteristic.SmokeDetected,
+                req.body.state
+              );
+              break;
+            case 'TemperatureSensor':
+              accessory.temp = req.body.temp;
+              this.konnectedPlatformAccessories[existingAccessory.UUID].service.updateCharacteristic(
+                this.Characteristic.CurrentTemperature,
+                req.body.temp
+              );
+              break;
+            case 'HumiditySensor':
+              accessory.humi = Math.round(req.body.humi);
+              accessory.temp = req.body.temp;
+              this.konnectedPlatformAccessories[existingAccessory.UUID].service.updateCharacteristic(
+                this.Characteristic.CurrentRelativeHumidity,
+                accessory.humi
+              );
+              this.konnectedPlatformAccessories[existingAccessory.UUID].service.updateCharacteristic(
+                this.Characteristic.CurrentTemperature,
+                req.body.temp
+              );
+              break;
+
+            case 'Switch':
+              accessory.state = req.body.state;
+              this.konnectedPlatformAccessories[existingAccessory.UUID].service.updateCharacteristic(
+                this.Characteristic.On,
+                req.body.state
+              );
+              break;
+
+            default:
+              break;
+          }
+        }
+      });
+    }
+  }
+
+  /**
+   * Method to actuate a switch type zone's state with the zone's specific switch advanced settings.
+   *
    * @param device
    */
-  actuateAccessory(device) {
-    // check if accessory actuatable
+  actuateAccessory(zoneUUID, value) {
+    
+    // loop through accessories and get the panel endpoint address and the model of the panel for the zone
+    const existingAccessory = this.accessories.find((accessory) => accessory.UUID === zoneUUID);
 
-    console.log(device);
+    if (existingAccessory) {
+      // loop through the plugin configuration to get the correct panel for the zone
+      this.config.panels.forEach((panelObject) => {
+        if (panelObject.ipAddress === existingAccessory.context.device.panel.ip) {
+          // build endpoint
+          let panelEndpoint =
+            'http://' +
+            existingAccessory.context.device.panel.ip +
+            ':' +
+            existingAccessory.context.device.panel.port +
+            '/';
+
+          // loop through the plugin configuration to get the zone's switch advanced settings
+          panelObject.zones.forEach((zoneObject) => {
+            if (zoneObject.zoneNumber === existingAccessory.context.device.serialNumber.split('-')[1]) {
+              const actuatorPayload: Record<string, unknown> = {
+                // explicitly convert boolean to integer
+                state: value === true ? 1 : 0,
+              };
+
+              let actuatorDuration;
+
+              // Pro vs V1-V2 detection
+              if ('model' in existingAccessory.context.device.panel) {
+                // this is a Pro panel
+                actuatorPayload.zone = zoneObject.zoneNumber;
+                panelEndpoint += 'zone';
+              } else {
+                // this is a V1-V2 panel
+                panelEndpoint += 'device';
+                // convert zone to a pin
+                if (ZONES_TO_PINS[Number(zoneObject.zoneNumber)]) {
+                  actuatorPayload!.pin = ZONES_TO_PINS[Number(zoneObject.zoneNumber)];
+                } else {
+                  this.log.warn(
+                    `Invalid Zone: Cannot actuate the zone number '${zoneObject.zoneNumber}' for Konnected V1-V2 Alarm Panels.`
+                  );
+                }
+              }
+
+              if (zoneObject.switchSettings) {
+                // only do the following if the switch is turning on, otherwise we simply need send a payload of off
+                if (value === true) {
+                  if (zoneObject.switchSettings.pulseDuration) {
+                    actuatorPayload.momentary = actuatorDuration = zoneObject.switchSettings.pulseDuration;
+                  }
+                  if (zoneObject.switchSettings.pulseRepeat && zoneObject.switchSettings.pulsePause) {
+                    actuatorPayload.times = zoneObject.switchSettings.pulseRepeat;
+                    actuatorPayload.pause = zoneObject.switchSettings.pulsePause;
+                    if (zoneObject.switchSettings.pulseRepeat > 0) {
+                      actuatorDuration =
+                        actuatorDuration * zoneObject.switchSettings.pulseRepeat +
+                        zoneObject.switchSettings.pulsePause * (zoneObject.switchSettings.pulseRepeat - 1);
+                    }
+                  }
+                }
+              }
+
+              const actuatePanelZone = async (url: string) => {
+                try {
+                  const response = await fetch(url, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(actuatorPayload),
+                  });
+                  if (response.status === 200) {
+                    if (
+                      actuatorDuration &&
+                      zoneObject.switchSettings.pulsePause &&
+                      zoneObject.switchSettings.pulseRepeat !== -1
+                    ) {
+                      // this is a momentary switch, reset the state after done
+                      setTimeout(() => {
+                        // if state is on, turn off
+                        const restoreState = value === true ? 0 : 1;
+                        // update Homebridge/HomeKit displayed state
+                        this.konnectedPlatformAccessories[zoneUUID].service.updateCharacteristic(
+                          this.Characteristic.On,
+                          restoreState
+                        );
+                        // update the state cache for subsequent HomeKit get calls
+                        this.zoneStatesCache.forEach((accessory) => {
+                          if (accessory.UUID === zoneUUID) {
+                            accessory.switch = restoreState;
+                          }
+                        });
+                      }, actuatorDuration);
+                    }
+                  }
+                } catch (error) {
+                  this.log.error(error);
+                }
+              };
+              actuatePanelZone(panelEndpoint);
+            }
+          });
+        }
+      });      
+    }
   }
 }
