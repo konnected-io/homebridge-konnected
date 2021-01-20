@@ -15,6 +15,13 @@
       "expandable": true,
       "expanded": false,
       "properties": {
+        "listenerIP": {
+          "title": "Listening IP (optional)",
+          "description": "Force panels to send zone state changes to an IPV4 address that represents this system on the network. <i>In some cases, your system may have multiple network adapters registered.</i>",
+          "type": "string",
+          "format": "ipv4",
+          "placeholder": "(default: automatically selected)"
+        },
         "listenerPort": {
           "title": "Listening Port (optional)",
           "description": "Force panels to send zone state changes to a specific listening port on this system (between 1000 and 65535).",
@@ -24,20 +31,14 @@
           "maximum": 65535,
           "placeholder": "(default: randomized by availability)"
         },
-        "listenerIP": {
-          "title": "Listening IP (optional)",
-          "description": "Force panels to send zone state changes to an IPV4 address that represents this system on the network. <i>In some cases, your system may have multiple network adapters registered.</i>",
-          "type": "string",
-          "placeholder": "(default: automatically selected)"
-        },
         "discoveryTimeout": {
-          "title": "Discovery Timeout (optional)",
+          "title": "Discovery Timeout (s) (optional)",
           "description": "Provide a length of time in seconds (between 1 and 300) to allow this plugin to discover all of the Konnected Alarm Panels on the network.",
           "type": "number",
           "step": 1,
           "minimum": 1,
           "maximum": 300,
-          "placeholder": "(default: 10 seconds)"
+          "placeholder": "(default: 5 seconds)"
         }
       }
     },
@@ -60,9 +61,21 @@
             "readonly": true
           },
           "ipAddress": {
-            "title": "IP Address",
+            "title": "IP Address (changeable)",
             "type": "string",
-            "placeholder": "(optional)"
+            "format": "ipv4"
+          },
+          "port": {
+            "title": "Port (changeable)",
+            "type": "number",
+            "step": 1,
+            "minimum": 1000,
+            "maximum": 65535
+          },
+          "blink": {
+            "title": "Blink panel LED when zones change/report their state.",
+            "type": "boolean",
+            "default": true
           },
           "zones": {
             "description": "Customize the names and types of your zones.<br><span class='primary-text'>You need to define your zones here to create sensor and actuator accessories in HomeKit.</span>",
@@ -75,72 +88,73 @@
               "type": "object",
               "properties": {
                 "zoneNumber": {
-                  "title": "Zone Number",
-                  "type": "integer",
+                  "title": "Zone",
+                  "type": "string",
                   "oneOf": [
                     {
                       "title": "V1/V2 & Pro: 1",
-                      "enum": [1]
+                      "enum": ["1"]
                     },
                     {
                       "title": "V1/V2 & Pro: 2",
-                      "enum": [2]
+                      "enum": ["2"]
                     },
                     {
                       "title": "V1/V2 & Pro: 3",
-                      "enum": [3]
+                      "enum": ["3"]
                     },
                     {
                       "title": "V1/V2 & Pro: 4",
-                      "enum": [4]
+                      "enum": ["4"]
                     },
                     {
                       "title": "V1/V2 & Pro: 5",
-                      "enum": [5]
+                      "enum": ["5"]
                     },
                     {
                       "title": "V1/V2 & Pro: 6",
-                      "enum": [6]
+                      "enum": ["6"]
                     },
                     {
-                      "title": "V1/V2: 7 Out or Alarm",
-                      "enum": [7]
+                      "title": "V1/V2: Out or Alarm",
+                      "enum": ["out"]
                     },
                     {
                       "title": "Pro Only: 7",
-                      "enum": [7]
+                      "enum": ["7"]
                     },
                     {
                       "title": "Pro Only: 8",
-                      "enum": [8]
+                      "enum": ["8"]
                     },
                     {
-                      "title": "Pro Only: 9",
-                      "enum": [9]
+                      "title": "Pro Only: 9 (binary sensors only)",
+                      "enum": ["9"]
                     },
                     {
-                      "title": "Pro Only: 10",
-                      "enum": [10]
+                      "title": "Pro Only: 10 (binary sensors only)",
+                      "enum": ["10"]
                     },
                     {
-                      "title": "Pro Only: 11",
-                      "enum": [11]
+                      "title": "Pro Only: 11 (binary sensors only)",
+                      "enum": ["11"]
                     },
                     {
-                      "title": "Pro Only: 12",
-                      "enum": [12]
+                      "title": "Pro Only: 12 (binary sensors only)",
+                      "enum": ["12"]
+                    },
+                    
+                    {
+                      "title": "Pro Only: Alarm 1",
+                      "enum": ["alarm1"]
                     },
                     {
-                      "title": "Pro Only: 13 Alarm Siren 1",
-                      "enum": [13]
+                      "title": "Pro Only: Out1",
+                      "enum": ["out1"]
                     },
                     {
-                      "title": "Pro Only: 14 Out",
-                      "enum": [14]
-                    },
-                    {
-                      "title": "Pro Only: 15 Alarm Siren 2",
-                      "enum": [15]
+                      "title": "Pro Only: Alarm 2 or Out2",
+                      "enum": ["alarm2_out2"]
                     }
                   ]
                 },
@@ -149,43 +163,47 @@
                   "type": "string",
                   "oneOf": [
                     {
-                      "title": "Contact Sensor",
+                      "title": "Sensor: Contact Sensor",
                       "enum": ["contact"]
                     },
                     {
-                      "title": "Motion Sensor",
+                      "title": "Sensor: Motion Sensor",
                       "enum": ["motion"]
                     },
                     {
-                      "title": "Glass Break Sensor",
+                      "title": "Sensor: Glass Break Sensor",
                       "enum": ["glass"]
                     },
                     {
-                      "title": "Tempurature Sensor (eg. DS18B20)",
+                      "title": "Sensor: Tempurature Sensor (eg. DS18B20)",
                       "enum": ["temperature"]
                     },
                     {
-                      "title": "Temperature / Humidity Sensor (eg. DHT)",
+                      "title": "Sensor: Temperature / Humidity Sensor (eg. DHT)",
                       "enum": ["temphumid"]
                     },
                     {
-                      "title": "Water Leak / Rain Sensor",
+                      "title": "Sensor: Water Leak / Rain Sensor",
                       "enum": ["water"]
                     },
                     {
-                      "title": "Smoke / CO Sensor",
+                      "title": "Sensor: Smoke / CO Sensor",
                       "enum": ["smoke"]
                     },
                     {
-                      "title": "Alarm Siren",
+                      "title": "Switch: Alarm Arm/Disarm Switch",
+                      "enum": ["armingswitch"]
+                    },
+                    {
+                      "title": "Switch: Alarm Siren Switch",
                       "enum": ["siren"]
                     },
                     {
-                      "title": "Alarm Strobe Light",
+                      "title": "Switch: Alarm Strobe Light Switch",
                       "enum": ["strobe"]
                     },
                     {
-                      "title": "Switch",
+                      "title": "Switch: Generic Switch",
                       "enum": ["switch"]
                     }
                   ]
@@ -193,15 +211,209 @@
                 "zoneLocation": {
                   "title": "Location",
                   "type": "string",
-                  "placeholder": "(E.g., Living Room)"
+                  "placeholder": "(E.g., Living Room)",
+                  "typeahead": {
+                    "source": [
+                      "Addition",
+                      "Alarm Box",
+                      "Alarm Panel",
+                      "Alarm System",
+                      "Atrium",
+                      "Attic",
+                      "Auditorium",
+                      "Back",
+                      "Backyard",
+                      "Balcony",
+                      "Banister",
+                      "Banquette",
+                      "Barn",
+                      "Basement",
+                      "Bathroom",
+                      "Bay Window",
+                      "Bedroom",
+                      "Boat House",
+                      "Boiler Room",
+                      "Boudoir",
+                      "Breakfast Nook",
+                      "Cabin",
+                      "Cabinet",
+                      "Ceiling",
+                      "Cellar",
+                      "Chapel",
+                      "Cloakroom",
+                      "Closet",
+                      "Common Room",
+                      "Computer Room",
+                      "Conference Room",
+                      "Conservatory",
+                      "Control Room",
+                      "Corridor",
+                      "Courtyard",
+                      "Crawlspace",
+                      "Cubby",
+                      "Dark Room",
+                      "Deck",
+                      "Den",
+                      "Dining Room",
+                      "Drawing Room",
+                      "Dressing Room",
+                      "Dungeon",
+                      "Electrical Room",
+                      "Entrance",
+                      "Entryway",
+                      "Equipment Room",
+                      "Family Room",
+                      "Fence",
+                      "First Floor",
+                      "Floor",
+                      "Formal Dining Room",
+                      "Formal Living Room",
+                      "Fourth Floor",
+                      "Foyer",
+                      "Front",
+                      "Front Yard",
+                      "Furnace Room",
+                      "Game Room",
+                      "Garage",
+                      "Garden",
+                      "Great Hall",
+                      "Great Room",
+                      "Greenhouse",
+                      "Grotto",
+                      "Guest Room",
+                      "Gym",
+                      "Hall",
+                      "Hallway",
+                      "Indoor",
+                      "Inglenook",
+                      "Inside",
+                      "Junk Room",
+                      "Keep",
+                      "Kitchen",
+                      "Kitchenette",
+                      "Larder",
+                      "Laundry Room",
+                      "Lenai",
+                      "Library",
+                      "Living Room",
+                      "Lobby",
+                      "Loft",
+                      "Lounge",
+                      "Machine Room",
+                      "Man Cave",
+                      "Master Bath",
+                      "Master Bedroom",
+                      "Master Closet",
+                      "Mechanical Closet",
+                      "Mechanical Room",
+                      "Media Closet",
+                      "Media Room",
+                      "Mezanine",
+                      "Mud Room",
+                      "Music Room",
+                      "Nook",
+                      "Nursery",
+                      "Office",
+                      "Outdoor",
+                      "Outside",
+                      "Outside",
+                      "Panic Room",
+                      "Pantry",
+                      "Parlour",
+                      "Partition",
+                      "Patio",
+                      "Pool",
+                      "Pool Room",
+                      "Porch",
+                      "Powder Room",
+                      "Pump Room",
+                      "Rec Room",
+                      "Recreation Room",
+                      "Rest Room",
+                      "Roof",
+                      "Root Cellar",
+                      "Rotunda",
+                      "Safe Room",
+                      "Salon",
+                      "Sauna",
+                      "Scullery",
+                      "Second Floor",
+                      "Security Box",
+                      "Security Panel",
+                      "Security System",
+                      "Server Room",
+                      "Server Closet",
+                      "Shed",
+                      "Shop",
+                      "Shower",
+                      "Showroom",
+                      "Side",
+                      "Side Yard",
+                      "Sitting Room",
+                      "Solarium",
+                      "Spandrel",
+                      "Spare room",
+                      "Staff Quarters",
+                      "Stairs",
+                      "Stairway",
+                      "State Room",
+                      "Storage Room",
+                      "Storm Cellar",
+                      "Studio",
+                      "Study",
+                      "Suite",
+                      "Sun Room",
+                      "Theatre Room",
+                      "Third Floor",
+                      "Throne Room",
+                      "Tree House",
+                      "Utility Room",
+                      "Veranda",
+                      "Vestibule",
+                      "Waiting Room",
+                      "Walk-In",
+                      "Walkway",
+                      "Wardrobe",
+                      "Well",
+                      "Wine Cellar",
+                      "Workshop",
+                      "Yard"
+                    ]
+                  }
                 },
-                "zoneActiveAtHome": {
-                  "title": "Active in Home Mode",
-                  "type": "boolean"
-                },
-                "zoneActiveAtNight": {
-                  "title": "Active in Night Mode",
-                  "type": "boolean"
+                "switchSettings": {
+                  "type": "object",
+                  "expandable": true,
+                  "expanded": false,
+                  "properties": {
+                    "": {
+                      "description": "<span class='primary-text'>Define additional options (switches only).</span>",
+                      "type": "object"
+                    },
+                    "pulseDuration": {
+                      "title": "Pulse Duration (ms) (optional)",
+                      "description": "How long the pulse is maintained in the on state for.",
+                      "type": "number",
+                      "step": 1,
+                      "minimum": 1,
+                      "placeholder": "(E.g., 100)"
+                    },
+                    "pulsePause": {
+                      "title": "Pause Between Pulses (ms) (optional, but required if Times to Repeat exists)",
+                      "type": "number",
+                      "step": 1,
+                      "minimum": 1,
+                      "placeholder": "(E.g., 100)"
+                    },
+                    "pulseRepeat": {
+                      "title": "Times to Repeat (optional, but required if Pause Between Pulses exists)",
+                      "description": "To repeat indefinitely, use -1 as the value.",
+                      "type": "number",
+                      "step": 1,
+                      "minimum": -1,
+                      "placeholder": "(E.g., 3)"
+                    }
+                  }
                 }
               }
             }
@@ -209,5 +421,5 @@
         }
       }
     }
-  } 
+  }
 }
