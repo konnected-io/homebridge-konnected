@@ -8,7 +8,7 @@
 [![Lint & Build](https://github.com/konnected-io/homebridge-konnected/workflows/Lint%20&%20Build/badge.svg)](https://github.com/konnected-io/homebridge-konnected/actions)
 
 # ⚠️ WARNING ⚠️
-*This repository is in beta is not ready for public use.*
+*This repository is in beta for public testing.*
 
 The first stable version will be made public as an official github release (this is not a release, please read about [github releases](https://docs.github.com/en/enterprise/2.16/user/github/administering-a-repository/about-releases) for more information). As of yet, we do not have a release date planned, but progress on this project is actively being made. Thank you for your patience.
 
