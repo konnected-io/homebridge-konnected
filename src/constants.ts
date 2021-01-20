@@ -1,24 +1,23 @@
 /**
  * For Pro Panel
  */
-export const ZONES = [
-  1,
-  2,
-  3,
-  4,
-  5,
-  6,
-  7,
-  8,
-  9,
-  10,
-  11,
-  12,
-  'alarm1',
-  'out1',
-  'alarm2_out2',
-  'out',
-];
+export const ZONES = {
+  1: ['sensor', 'switch', 'armingswitch'],
+  2: ['sensor', 'switch', 'armingswitch'],
+  3: ['sensor', 'switch', 'armingswitch'],
+  4: ['sensor', 'switch', 'armingswitch'],
+  5: ['sensor', 'switch', 'armingswitch'],
+  6: ['sensor', 'switch', 'armingswitch'],
+  7: ['sensor', 'switch', 'armingswitch'],
+  8: ['sensor', 'switch', 'armingswitch'],
+  9: ['sensor'],
+  10: ['sensor'],
+  11: ['sensor'],
+  12: ['sensor'],
+  alarm1: ['sensor', 'switch', 'armingswitch'],
+  out1: ['sensor', 'switch', 'armingswitch'],
+  alarm2_out2: ['sensor', 'switch', 'armingswitch'],
+};
 
 /**
  * For V1/V2 Panels
@@ -33,6 +32,9 @@ export const ZONES_TO_PINS = {
   out: 8,
 };
 
+/**
+ * For Zone Logic
+ */
 export const ZONE_TYPES = {
   sensors: [
     'contact',
@@ -42,13 +44,14 @@ export const ZONE_TYPES = {
     'smoke',
   ],
   dht_sensors: [
-    'temperature',
-  ],
-  ds18b20_sensors: [
     'temphumid',
     'temperature_humidity',
   ],
+  ds18b20_sensors: [
+    'temperature',
+  ],
   actuators: [
+    'armingswitch',
     'siren',
     'strobe',
     'switch',
@@ -56,17 +59,18 @@ export const ZONE_TYPES = {
 };
 
 export const ZONE_TYPES_TO_ACCESSORIES = {
-  contact: 'ContactSensor',               // https://developers.homebridge.io/#/service/ContactSensor
-  motion: 'MotionSensor',                 // https://developers.homebridge.io/#/service/MotionSensor
-  glass: 'ContactSensor',                 // https://developers.homebridge.io/#/service/ContactSensor
-  water: 'LeakSensor',                    // https://developers.homebridge.io/#/service/LeakSensor
-  smoke: 'SmokeSensor',                   // https://developers.homebridge.io/#/service/SmokeSensor
-  temperature: 'TemperatureSensor',       // https://developers.homebridge.io/#/service/TemperatureSensor
-  temphumid: 'HumiditySensor',            // https://developers.homebridge.io/#/service/HumiditySensor
-  temperature_humidity: 'HumiditySensor', // https://developers.homebridge.io/#/service/HumiditySensor
-  siren: 'Speaker',                       // https://developers.homebridge.io/#/service/Speaker
-  strobe: 'Lightbulb',                    // https://developers.homebridge.io/#/service/Lightbulb
-  switch: 'Switch',                       // https://developers.homebridge.io/#/service/Switch
+  contact: 'ContactSensor',                // https://developers.homebridge.io/#/service/ContactSensor
+  motion: 'MotionSensor',                  // https://developers.homebridge.io/#/service/MotionSensor
+  glass: 'ContactSensor',                  // https://developers.homebridge.io/#/service/ContactSensor
+  water: 'LeakSensor',                     // https://developers.homebridge.io/#/service/LeakSensor
+  smoke: 'SmokeSensor',                    // https://developers.homebridge.io/#/service/SmokeSensor
+  temperature: 'TemperatureSensor',        // https://developers.homebridge.io/#/service/TemperatureSensor
+  temphumid: 'HumiditySensor',             // https://developers.homebridge.io/#/service/HumiditySensor
+  temperature_humidity: 'HumiditySensor',  // https://developers.homebridge.io/#/service/HumiditySensor
+  armingswitch: 'Switch',                  // https://developers.homebridge.io/#/service/SecuritySystem
+  siren: 'Switch',                         // https://developers.homebridge.io/#/service/Switch
+  strobe: 'Switch',                        // https://developers.homebridge.io/#/service/Switch
+  switch: 'Switch',                        // https://developers.homebridge.io/#/service/Switch
 };
 
 export const ZONE_TYPES_TO_NAMES = {
@@ -76,9 +80,10 @@ export const ZONE_TYPES_TO_NAMES = {
   water: 'Water Sensor',
   smoke: 'Smoke Sensor',
   temperature: 'Temperature Sensor',
-  temphumid: 'Humidity Sensor',
-  temperature_humidity: 'Humidity Sensor',
+  temphumid: 'Temperature & Humidity Sensor',
+  temperature_humidity: 'Temperature & Humidity Sensor',
+  armingswitch: 'Alarm Switch',
   siren: 'Alarm Siren',
   strobe: 'Alarm Strobe Light',
-  switch: 'Switch',
+  switch: 'Generic Switch',
 };
