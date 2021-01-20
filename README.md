@@ -8,34 +8,37 @@
 [![Lint & Build](https://github.com/konnected-io/homebridge-konnected/workflows/Lint%20&%20Build/badge.svg)](https://github.com/konnected-io/homebridge-konnected/actions)
 
 # ⚠️ WARNING ⚠️
-*This repository is in development is not ready for public use.*
+*This repository is in beta is not ready for public use.*
 
 The first stable version will be made public as an official github release (this is not a release, please read about [github releases](https://docs.github.com/en/enterprise/2.16/user/github/administering-a-repository/about-releases) for more information). As of yet, we do not have a release date planned, but progress on this project is actively being made. Thank you for your patience.
 
 # Supported Features
 
- * Alarm System
-   * Arming
-   * Disarming
- * Sensors
-   * Contact Sensor States
-   * Motion Sensor States
-   * Glass Break Sensor States
-   * Temperature Sensor States
-   * Temperature/Humidity Sensor States
-   * Water Sensor States
-   * Smoke Sensor States
- * Actuators
-   * Alarm Siren Switch
-   * Alarm Strobe Light Switch
-   * Basic Binary Switch
- * Professional 24/7 Smart Home Monitoring (powered by [Noonlight](https://noonlight.com/))
+  * Sensors
+    * Contact Sensor States
+    * Motion Sensor States
+    * Glass Break Sensor States
+    * Temperature Sensor States
+    * Humidity Sensor States
+    * Smoke Sensor States
+    * Water Sensor States
+  * Actuators
+    * Alarm Arm/Disarm Switch (defaults to basic switch)
+    * Alarm Siren Switch
+    * Alarm Strobe Light Switch
+    * Basic Binary Switch
+
+# Upcoming Features
+
+  * HomeKit native alarm system switch
+  * Ability to invert the state of sensors and actuators.
+  * Professional 24/7 smart home monitoring (powered by [Noonlight](https://noonlight.com/))
 
 # Installation
 
-1. Install homebridge: `npm install -g homebridge`
-2. Install this plugin: `npm install -g homebridge-konnected`
-3. Update your configuration file (see below).
+  1. Install homebridge: `npm install -g homebridge`
+  2. Install this plugin: `npm install -g homebridge-konnected`
+  3. Update your configuration file (see below).
 
 # Configuration
 
@@ -59,40 +62,54 @@ The following example is not exhaustive, however the best way to generate the re
 {
   "name": "Konnected",
   "advanced": {
-      "listenerPort": 5000,
-      "listenerIP": "192.168.2.213",
-      "discoveryTimeout": 10
+    "listenerPort": 5000,
+    "listenerIP": "192.168.2.213",
+    "discoveryTimeout": 10
   },
-  "panels": [{
-          "name": "Konnected V1/V2",
-          "uuid": "8f655392-a778-4fee-97b9-123456789abc",
-          "zones": [{
-                  "zoneNumber": 1,
-                  "zoneType": "contact",
-                  "zoneLocation": "Front Entrance"
-              },
-              {
-                  "zoneNumber": 2,
-                  "zoneType": "motion",
-                  "zoneLocation": "Living Room"
-              }
-          ]
-      },
-      {
-          "name": "Konnected Pro",
-          "uuid": "8f655392-a778-4fee-97b9-123456789abd",
-          "zones": [{
-                  "zoneNumber": 8,
-                  "zoneType": "motion",
-                  "zoneLocation": "Master"
-              },
-              {
-                  "zoneNumber": 9,
-                  "zoneType": "motion",
-                  "zoneLocation": "Kitchen"
-              }
-          ]
-      }
+  "panels": [
+    {
+      "name": "Konnected V1/V2",
+      "uuid": "8f655392-a778-4fee-97b9-123456789abc",
+      "ipAddress": "192.168.1.110",
+      "port": 12345,
+      "blink": true,
+      "zones": [
+        {
+          "zoneNumber": 1,
+          "zoneType": "switch",
+          "zoneLocation": "Front Entrance",
+          "switchSettings": {
+            "pulseDuration": 1000,
+            "pulsePause": 500,
+            "pulseRepeat": 3
+          }
+        },
+        {
+          "zoneNumber": 2,
+          "zoneType": "motion",
+          "zoneLocation": "Living Room"
+        }
+      ]
+    },
+    {
+      "name": "Konnected Pro",
+      "uuid": "8f655392-a778-4fee-97b9-123456789abd",
+      "ipAddress": "192.168.1.120",
+      "port": 54321,
+      "blink": false,
+      "zones": [
+        {
+          "zoneNumber": 1,
+          "zoneType": "motion",
+          "zoneLocation": "Master"
+        },
+        {
+          "zoneNumber": 9,
+          "zoneType": "temphumid",
+          "zoneLocation": "Kitchen"
+        }
+      ]
+    }
   ],
   "platform": "konnected"
 }
@@ -110,26 +127,34 @@ The following example is not exhaustive, however the best way to generate the re
 * **"panels"**: An array of objects that represent the various panel details and features To associate different sensors and actuators a panel must eventually exist in this config section:
   * **"name"** *(required)* The name of the specific panel.
   * **"UUID"** *(required/auto-generated/readonly)* The unique identifier for the panel.
+  * **"ipAddress"** *(optional/auto-generated)* The active IP address of the panel.
+  * **"port"** *(optional/auto-generated)* The active network port of the panel.
+  * **"blink"** *(optional)* Blink panel LED when zones change/report their state.
   * **"zones"**: *(optional)* An array of objects that represent assigned zones on the panel:
     * **"zoneNumber"**: Depending on the panel board, the following assignments are allowed:
-      * *V1/V2 Panel: 1 through 7 (7 is out or alarm).*
-      * *Pro Panel: 1 through 15 (13 is alarm1, 14 is out, and 15 is alarm2).*
+      * V1/V2 Panel: 1 through 6, 'out' or 'alarm').
+      * Pro Panel: 1 through 12, 'alarm1', 'out', 'alarm2_out2').
     * **"zoneType"**: any one of the following:
-      * "contact":
-      * "motion":
-      * "glass": 
+      * "contact"
+      * "motion"
+      * "glass" 
       * "temperature"
-      * "temphumid"
+      * "temphumid" or "temperature_humidity" (will expose two sensors in HomeKit)
       * "water"
       * "smoke"
-      * "siren" (actuator)
-      * "strobe" (actuator)
-      * "switch" (actuator)
-    * **"zoneLocation"**: (optional) Custom name for the zone's location.
+      * "armingswitch" *(actuator)*
+      * "siren" *(actuator)*
+      * "strobe" *(actuator)*
+      * "switch" *(actuator)*
+    * **"zoneLocation"**: *(optional)* Custom name for the zone's location (Example: Kitchen).
+    * **"switchSettings"**: *(optional)* Switch-only object of settings when actuating the switch:
+      * **"pulseDuration"**: *(optional)* How long the pulse is maintained in the on state for (in milliseconds).
+      * **"pulsePause"**: *(conditional)* Pause between pulses (in milliseconds - required if pulseRepeat exists).
+      * **"pulseRepeat"**: *(conditional)* Times to repeat pulse sequence (required if pulsePause exists - infinite set to a value of -1)
 
 # Troubleshooting
 
-Before assuming that something is wrong with the plugin, please review the [issues on this project's github repository](https://github.com/konnected-io/homebridge-konnected/issues?utf8=%E2%9C%93&q=sort%3Aupdated-desc+) to see if there's already a similar issue reported where a solution has been proposed.
+Before assuming that something is wrong with the plugin, please review the [Konnected Homebridge Forum](https://help.konnected.io/support/discussions/forums/32000043024) to see if there's already a similar issue reported where a solution has been proposed.
 
 If you are updating from a Konnected Alarm Panel version or from non-Pro to Pro, you may be required to delete the `~/.homebridge/accessories/cachedAccessories` file for the new platform to show up with the new panel, accessories and devices.
 
