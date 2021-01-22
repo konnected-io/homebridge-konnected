@@ -508,7 +508,7 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
               };
 
               zoneObjectsArray.push(zoneObject);
-              this.zoneStatesCache.push(zoneObject);
+              this.zoneStatesRuntimeCache.push(zoneObject);
 
               // match this zone's UUID to the UUID of an accessory stored in the global accessories cache
               // store accessory object in an array of retained accessories that we don't want unregistered in Homebridge and HomeKit
@@ -683,7 +683,7 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
       this.log.debug(`${existingAccessory.displayName} (${existingAccessory.UUID}):`, deviceState);
 
       // loop through the accessories state cache and update state and service characteristic
-      this.zoneStatesCache.forEach((accessory) => {
+      this.zoneStatesRuntimeCache.forEach((accessory) => {
         if (accessory.UUID === zoneUUID) {
           switch (ZONE_TYPES_TO_ACCESSORIES[existingAccessory.context.device.type]) {
             case 'ContactSensor':
@@ -841,7 +841,7 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
                           restoreState
                         );
                         // update the state cache for subsequent HomeKit get calls
-                        this.zoneStatesCache.forEach((accessory) => {
+                        this.zoneStatesRuntimeCache.forEach((accessory) => {
                           if (accessory.UUID === zoneUUID) {
                             accessory.switch = restoreState;
                           }

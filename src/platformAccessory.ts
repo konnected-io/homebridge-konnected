@@ -92,7 +92,7 @@ export class KonnectedPlatformAccessory {
   getAccessoryState(accessoryUUID: string, stateType: string) {
     let value;
 
-    this.platform.zoneStatesCache.forEach((accessory) => {
+    this.platform.zoneStatesRuntimeCache.forEach((accessory) => {
       if (accessory.UUID === accessoryUUID) {
 
         console.log(accessory.model, accessory[stateType]);
@@ -121,7 +121,7 @@ export class KonnectedPlatformAccessory {
    * Sets the state of the accessory in the state cache.
    */
   setAccessoryState(accessoryUUID: string, stateType: string, value) {
-    this.platform.zoneStatesCache.forEach((accessory) => {
+    this.platform.zoneStatesRuntimeCache.forEach((accessory) => {
       if (accessory.UUID === accessoryUUID) {
         accessory[stateType] = value;
       }
