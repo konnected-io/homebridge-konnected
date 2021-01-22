@@ -1,16 +1,22 @@
-[![konnected.io](https://raw.githubusercontent.com/konnected-io/docs/master/assets/images/logo-black-small.png)](https://konnected.io)
-# Konnected Alarm Panel plugin for Homebridge
-[![NPM](https://nodei.co/npm/homebridge-konnected.png?downloads=true&downloadRank=true&stars=true)](https://nodei.co/npm/homebridge-konnected/)
+<p align="center">
+  <a href="https://github.com/homebridge/verified/blob/master/verified-plugins.json"><img alt="Homebridge Verified" src="https://raw.githubusercontent.com/konnected-io/homebridge-konnected/master/branding/Konnected_w_Homebridge.svg?sanitize=true" width="500px"></a>
+</p>
 
-[![GitHub release](https://img.shields.io/github/release/konnected-io/homebridge-konnected.svg?style=flat-square)](https://github.com/konnected-io/homebridge-konnected/releases)
-[![npm](https://img.shields.io/npm/dm/homebridge-konnected.svg)](https://www.npmjs.com/package/homebridge-konnected)
-[![npm](https://img.shields.io/npm/v/homebridge-konnected.svg)](https://www.npmjs.com/package/homebridge-konnected)
-[![Lint & Build](https://github.com/konnected-io/homebridge-konnected/workflows/Lint%20&%20Build/badge.svg)](https://github.com/konnected-io/homebridge-konnected/actions)
+# Konnected Homebridge Plugin
+[![GitHub Release](https://flat.badgen.net/github/release/konnected-io/homebridge-konnected/master?icon=github)](https://github.com/konnected-io/homebridge-konnected/releases)
+[![npm Release](https://flat.badgen.net/npm/v/homebridge-konnected?icon=npm)](https://www.npmjs.com/package/homebridge-konnected)
+[![TypeScript](https://flat.badgen.net/badge/typescript/100%?icon=typescript&label=typescript)]()
+
+[![Lint & Build](https://flat.badgen.net/github/checks/konnected-io/homebridge-konnected?icon=github&label=lint%20%26%20build)](https://github.com/konnected-io/homebridge-konnected/actions)
+[![npm Download Total](https://flat.badgen.net/npm/dt/homebridge-konnected?icon=npm)](https://www.npmjs.com/package/homebridge-konnected)
+
+[![Homebridge Verified](https://badgen.net/badge/homebridge/verified/purple)](https://github.com/homebridge/homebridge/wiki/Verified-Plugins)
+[![HOOBS Certified](https://flat.badgen.net/badge/hoobs/unsupported/orange)](https://plugins.hoobs.org/plugin/homebridge-konnected)
+[![Apple HomeKit](https://flat.badgen.net/badge/apple/homekit/f89f1a?icon=apple)](https://www.apple.com/ios/home/)
+[![License: MIT](https://flat.badgen.net/badge/license/MIT/blue)](https://github.com/konnected-io/homebridge-konnected/blob/master/LICENSE)
 
 # ⚠️ WARNING ⚠️
-*This repository is in beta for public testing.*
-
-The first stable version will be made public as an official github release (this is not a release, please read about [github releases](https://docs.github.com/en/enterprise/2.16/user/github/administering-a-repository/about-releases) for more information). As of yet, we do not have a release date planned, but progress on this project is actively being made. Thank you for your patience.
+*This repository is now in beta for public testing.*
 
 # Supported Features
 
@@ -33,12 +39,13 @@ The first stable version will be made public as an official github release (this
   * HomeKit native alarm system switch
   * Ability to invert the state of sensors and actuators.
   * Professional 24/7 smart home monitoring (powered by [Noonlight](https://noonlight.com/))
+  * HOOBS integration
 
 # Installation
 
   1. Install homebridge: `npm install -g homebridge`
   2. Install this plugin: `npm install -g homebridge-konnected`
-  3. Update your configuration file (see below).
+  3. Update your configuration file (see below)
 
 # Configuration
 
@@ -51,13 +58,15 @@ The following two fields are required for the Konnected plugin to start.
 }
 ```
 
-After loading this plugin for the first time, it will attempt to discover the Konnected panel(s) on the same LAN network as Homebridge. Once discovered, the plugin will attempt to:
-1. adjust the config.json file with the details of the discovered panel(s), assigning a name and a unique identifier for each;
-2. to provision each panel, the result of which is either a fresh panel without zones, or resetting/removing all zones on the panel(s).
+After loading this plugin **for the first time**, it will attempt to discover the Konnected panel(s) on the same local network as Homebridge. Once discovered, the plugin will try to:
+1. adjust the config.json file with the details of the discovered panel(s), assigning a name, a unique identifier, the IP address, and port for each panel;
+2. provision each panel, the result of which a fresh panel with unassigned zones.
 
 
 ### Zone Settings Example for config.json:
-The following example is not exhaustive, however the best way to generate the rest of the values below in your config is by installing and using the [Config UI X plugin](https://github.com/oznu/homebridge-config-ui-x#readme) for Homebridge as all of the settings are easily configurable in a convenient GUI interface.
+The best way to generate an error-free config.json is by installing and using the [Config UI X Plugin](https://github.com/oznu/homebridge-config-ui-x#readme) for Homebridge. The Konnected Homebridge plugin binds to the Config UI X configuration GUI which makes setting up the zones a trivial process.
+
+For those without Config UI X or are running this on HOOBS < 4.0.1 (not released yet), please see the following example configuration for this plugin:
 ```json
 {
   "name": "Konnected",
@@ -78,6 +87,7 @@ The following example is not exhaustive, however the best way to generate the re
           "zoneNumber": 1,
           "zoneType": "switch",
           "zoneLocation": "Front Entrance",
+          "invert": false,
           "switchSettings": {
             "pulseDuration": 1000,
             "pulsePause": 500,
@@ -87,7 +97,8 @@ The following example is not exhaustive, however the best way to generate the re
         {
           "zoneNumber": 2,
           "zoneType": "motion",
-          "zoneLocation": "Living Room"
+          "zoneLocation": "Living Room",
+          "invert": false
         }
       ]
     },
@@ -101,12 +112,14 @@ The following example is not exhaustive, however the best way to generate the re
         {
           "zoneNumber": 1,
           "zoneType": "motion",
-          "zoneLocation": "Master"
+          "zoneLocation": "Master",
+          "invert": true
         },
         {
           "zoneNumber": 9,
           "zoneType": "temphumid",
-          "zoneLocation": "Kitchen"
+          "zoneLocation": "Kitchen",
+          "invert": false
         }
       ]
     }
@@ -116,7 +129,7 @@ The following example is not exhaustive, however the best way to generate the re
 ```
 
 
-### Fields:
+### Configuration Field Explanations:
 
 * **"platform"**: *(required)* Must always be "konnected" 
 * **"name"**: *(required)* Can be anything, it is the name that will appear in your Homebridge log.
@@ -131,7 +144,7 @@ The following example is not exhaustive, however the best way to generate the re
   * **"port"** *(optional/auto-generated)* The active network port of the panel.
   * **"blink"** *(optional)* Blink panel LED when zones change/report their state.
   * **"zones"**: *(optional)* An array of objects that represent assigned zones on the panel:
-    * **"zoneNumber"**: Depending on the panel board, the following assignments are allowed:
+    * **"zoneNumber"**: Depending on the panel, the following assignments are allowed:
       * V1/V2 Panel: 1 through 6, 'out' or 'alarm').
       * Pro Panel: 1 through 12, 'alarm1', 'out', 'alarm2_out2').
     * **"zoneType"**: any one of the following:
@@ -142,11 +155,12 @@ The following example is not exhaustive, however the best way to generate the re
       * "temphumid" or "temperature_humidity" (will expose two sensors in HomeKit)
       * "water"
       * "smoke"
-      * "armingswitch" *(actuator)*
-      * "siren" *(actuator)*
-      * "strobe" *(actuator)*
-      * "switch" *(actuator)*
+      * "armingswitch" *(actuator switch)*
+      * "siren" *(actuator switch)*
+      * "strobe" *(actuator switch)*
+      * "switch" *(actuator switch)*
     * **"zoneLocation"**: *(optional)* Custom name for the zone's location (Example: Kitchen).
+    * **"invert"**: *(optional)* Flip the state of a zone sensor's input or switch's output.
     * **"switchSettings"**: *(optional)* Switch-only object of settings when actuating the switch:
       * **"pulseDuration"**: *(optional)* How long the pulse is maintained in the on state for (in milliseconds).
       * **"pulsePause"**: *(conditional)* Pause between pulses (in milliseconds - required if pulseRepeat exists).
@@ -154,9 +168,43 @@ The following example is not exhaustive, however the best way to generate the re
 
 # Troubleshooting
 
-Before assuming that something is wrong with the plugin, please review the [Konnected Homebridge Forum](https://help.konnected.io/support/discussions/forums/32000043024) to see if there's already a similar issue reported where a solution has been proposed.
+Before anything, please review the [Konnected Homebridge Forum](https://help.konnected.io/support/discussions/forums/32000043024) to see if there's already a similar issue reported where a solution has been proposed.
 
-If you are updating from a Konnected Alarm Panel version or from non-Pro to Pro, you may be required to delete the `~/.homebridge/accessories/cachedAccessories` file for the new platform to show up with the new panel, accessories and devices.
+If you cannot resolve the issue, please [Post a Forum Topic](https://help.konnected.io/support/discussions/topics/new?forum_id=32000043024) with the following details:
 
-**WARNING:** If you delete the contents of the `~/.homebridge/persist` folder, your Homebridge and devices will become unresponsive and you will have to entirely re-pair the Homebridge bridge (remove and re-scan the QR-code for Homebridge and set up all of your accessories/devices again).
+* Describe the Bug
+* Steps to Reproduce
+* Expected Behavior
+* Attach Files to Support Your Experience:
+  * Screenshots
+  * Log Snapshot (txt file)
+* Homebridge System:
+  * Node.js Version
+  * NPM Version
+  * Homebridge/HOOBS Version
+  * Operating System: *(Raspbian / Ubuntu / Debian / Windows / macOS / Docker)*
+  * Process Supervisor: *(Docker / Systemd / init.d / pm2 / launchctl / hb-service / other / none)*
+* Konnected Panel(s):
+  * Panel Hardware Version
+  * Firmware Version
+  * Addon Panel(s)
+  * Interface Panel(s)
+* Any Additional Relevant Information
+
+### "Did You Try Rebooting It?":
+
+Sometimes fixing a problematic Homebridge/HOOBS/HomeKit accessory is as simple as deleting Homebridge's `cachedAccessories` file. First stop Homebridge/HOOBS, then delete the `cachedAccessories` file which is commonly located in its respective folder:
+
+* Homebridge:
+  * Linux-based/MacOS: `~/.homebridge/accessories/cachedAccessories`
+  * Windows: `$HOME\.homebridge\Accessories\cachedAccessories`
+* HOOBS:
+  * HOOBSBox/Linux-based/MacOS:
+    * v3.x: `~/.hoobs/etc/accessories/cachedAccessories`
+    * v4.x: `/var/lib/hoobs/accessories/cachedAccessories`
+  * Windows (not supported for HOOBS whatsoever)
+
+Once the file is deleted, start up Homebridge/HOOBS and allow it to regenerate your accessories and the cache.
+
+**WARNING:** Be careful to not delete the `persist` folder or its contents! Your Homebridge and devices will become unresponsive and you will have to entirely re-pair the Homebridge bridge (remove and re-scan the QR-code for Homebridge and set up all of your accessories/devices again).
 
