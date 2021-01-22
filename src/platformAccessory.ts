@@ -94,8 +94,9 @@ export class KonnectedPlatformAccessory {
 
     this.platform.zoneStatesRuntimeCache.forEach((accessory) => {
       if (accessory.UUID === accessoryUUID) {
-
-        console.log(accessory.model, accessory[stateType]);
+        this.platform.log.debug(
+          `Get [${accessory.displayName}] '${stateType}' Characteristic: ${accessory[stateType]}`
+        );
 
         if (typeof accessory[stateType] === 'undefined') {
           this.platform.log.debug(
@@ -123,6 +124,9 @@ export class KonnectedPlatformAccessory {
   setAccessoryState(accessoryUUID: string, stateType: string, value) {
     this.platform.zoneStatesRuntimeCache.forEach((accessory) => {
       if (accessory.UUID === accessoryUUID) {
+        this.platform.log.debug(
+          `Set [${this.accessory.context.device.displayName}] 'Switch' Characteristic: ${accessory[stateType]}`
+        );
         accessory[stateType] = value;
       }
     });
@@ -135,61 +139,41 @@ export class KonnectedPlatformAccessory {
    */
   getContactSensorState(callback: CharacteristicGetCallback) {
     const state = this.getAccessoryState(this.accessory.context.device.UUID, 'state');
-    this.platform.log.debug(
-      `Get [${this.accessory.context.device.displayName}] 'ContactSensorState' Characteristic: ${state}`
-    );
     callback(null, state);
   }
 
   getMotionSensorState(callback: CharacteristicGetCallback) {
     const state = this.getAccessoryState(this.accessory.context.device.UUID, 'state');
-    this.platform.log.debug(
-      `Get [${this.accessory.context.device.displayName}] 'MotionSensorState' Characteristic: ${state}`
-    );
     callback(null, state);
   }
 
   getLeakSensorState(callback: CharacteristicGetCallback) {
     const state = this.getAccessoryState(this.accessory.context.device.UUID, 'state');
-    this.platform.log.debug(
-      `Get [${this.accessory.context.device.displayName}] 'LeakSensorState' Characteristic: ${state}`
-    );
     callback(null, state);
   }
 
   getSmokeSensorState(callback: CharacteristicGetCallback) {
     const state = this.getAccessoryState(this.accessory.context.device.UUID, 'state');
-    this.platform.log.debug(
-      `Get [${this.accessory.context.device.displayName}] 'SmokeSensorState' Characteristic: ${state}`
-    );
     callback(null, state);
   }
 
   getTemperatureSensorValue(callback: CharacteristicGetCallback) {
     const state = this.getAccessoryState(this.accessory.context.device.UUID, 'temp');
-    this.platform.log.debug(
-      `Get [${this.accessory.context.device.displayName}] 'TemperatureSensorValue' Characteristic: ${state}`
-    );
     callback(null, state);
   }
 
   getHumiditySensorValue(callback: CharacteristicGetCallback) {
     const state = this.getAccessoryState(this.accessory.context.device.UUID, 'humi');
-    this.platform.log.debug(
-      `Get [${this.accessory.context.device.displayName}] 'HumiditySensorValue' Characteristic: ${state}`
-    );
     callback(null, state);
   }
 
   getSwitchValue(callback: CharacteristicGetCallback) {
     const state = this.getAccessoryState(this.accessory.context.device.UUID, 'switch');
-    this.platform.log.debug(`Get [${this.accessory.context.device.displayName}] 'Switch' Characteristic: ${state}`);
     callback(null, state);
   }
 
   setSwitchValue(value, callback: CharacteristicGetCallback) {
     const state = this.setAccessoryState(this.accessory.context.device.UUID, 'switch', value);
-    this.platform.log.debug(`Set [${this.accessory.context.device.displayName}] 'Switch' Characteristic: ${state}`);
     callback(null);
   }
 }
