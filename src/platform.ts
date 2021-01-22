@@ -568,7 +568,7 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
     if (Array.isArray(retainedAccessoriesArray) && retainedAccessoriesArray!.length > 0) {
       retainedAccessoriesArray.forEach((accessory) => {
         if (typeof accessory !== 'undefined') {
-          this.log.debug(`Retained accessory: ${accessory.displayName} (${accessory.UUID}`);
+          this.log.debug(`Retained accessory: ${accessory.displayName}`);
         }
       });
     }
@@ -577,7 +577,7 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
       // unregister stale or missing zones/accessories in Homebridge and HomeKit
       accessoriesToRemoveArray.forEach((accessory) => {
         this.log.info(
-          `Removing stale accessory: ${accessory.displayName} (${accessory.context.device.model} :: ${accessory.UUID})`
+          `Removing stale accessory: ${accessory.displayName} (${accessory.context.device.model})`
         );
       });
       this.api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, accessoriesToRemoveArray);
@@ -596,7 +596,7 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
       if (existingAccessory && existingAccessory.context.device.UUID === panelZoneObject.UUID) {
         // then the accessory already exists
         this.log.info(
-          `Updating existing accessory: ${panelZoneObject.displayName} (${panelZoneObject.model} :: ${panelZoneObject.UUID})`
+          `Updating existing accessory: ${panelZoneObject.displayName} (${panelZoneObject.model})`
         );
 
         // update zone object in the platform accessory cache
@@ -612,7 +612,7 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
       } else {
         // otherwise we're adding a new accessory
         this.log.info(
-          `Adding new accessory: ${panelZoneObject.displayName} (${panelZoneObject.model} :: ${panelZoneObject.UUID})`
+          `Adding new accessory: ${panelZoneObject.displayName} (${panelZoneObject.model})`
         );
 
         // build Homebridge/HomeKit platform accessory
@@ -680,7 +680,7 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
 
     // check if the accessory already exists
     if (existingAccessory) {
-      this.log.debug(`${existingAccessory.displayName} (${existingAccessory.UUID}):`, deviceState);
+      this.log.debug(`${existingAccessory.displayName}:`, deviceState);
 
       // loop through the accessories state cache and update state and service characteristic
       this.zoneStatesRuntimeCache.forEach((accessory) => {
