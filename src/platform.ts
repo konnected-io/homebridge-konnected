@@ -40,11 +40,11 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
   // this is used to store an accessible reference to inialized accessories (used in accessory cache disk writes - don't update this often)
   public readonly konnectedPlatformAccessories = {};
 
-  // this is used to store a non-blocking state of the accessories
-  // this saves having to make network requests to the boards for states, which can cause delayed 'no-response' flag on the tiles in homekit
-  // the konnected boards mostly do the pushing of states of sensors to Homebridge and update their states in Homebridge (and consequently
+  // this is used to store a non-blocking runtime state of the accessories
+  // this saves having to make network requests to the Konnected panels for states, which can cause delayed 'no-response' flag on the tiles in homekit
+  // the Konnected panels mostly do the pushing of states of sensors to Homebridge and update their states in Homebridge (and consequently
   // homekit) at that time, but when homekit does it's own interval of polling, the states don't change inbetween those polls
-  public zoneStatesCache: Record<string, unknown>[] = [];
+  public zoneStatesRuntimeCache: Record<string, unknown>[] = [];
 
   // define shared variables here
   private listenerIP: string =
@@ -183,7 +183,7 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
 
     // on discovery
     ssdpClient.on('response', (headers) => {
-      // check for only konnected devices
+      // check for only Konnected devices
       if (headers.ST!.indexOf(ssdpUrnPartial) !== -1) {
         // store reported URL of panel that responded
         const ssdpHeaderLocation: string = headers.LOCATION || '';
@@ -252,7 +252,7 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
 
   /**
    * This method adds panels to the Homebridge config file to help users
-   * with multiple konnected panel/board setups in their alarm system.
+   * with multiple Konnected panel setups in their alarm system.
    *
    * @param panelUUID string  UUID for the panel as reported in the USN on discovery.
    * @param panelObject PanelObjectInterface  The status response object of the plugin from discovery.
@@ -297,9 +297,9 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
     if (newConfigJsonObject) {
       // loop through platforms
       for (const platform of newConfigJsonObject.platforms) {
-        // isolate konnected platform block
+        // isolate Konnected platform block
         if (platform.platform === 'konnected') {
-          // if no panels defined in konnected platform config block or
+          // if no panels defined in Konnected platform config block or
           // we can't find the UUID property for the panel object in the panels array
           if (typeof platform.panels === 'undefined' || !platform.panels.some((panel) => panel.uuid === panelUUID)) {
             // if undefined, instantiate panels property as array
@@ -322,8 +322,8 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
   }
 
   /**
-   * This method provisions alarm panel boards with information to communicate with this plugin
-   * and to register the zones on the board according to their configured settings in this plugin.
+   * This method provisions Konnected panels with information to communicate with this plugin
+   * and to register the zones on the panel according to their configured settings in this plugin.
    * https://help.konnected.io/support/solutions/articles/32000026807-device-provisioning
    *
    * @param panelUUID string  UUID for the panel as reported in the USN on discovery.
@@ -413,7 +413,7 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
         // If there's a chipId in the panelObject, use that, or use mac address.
         // V1/V2 panels only have one interface (WiFi). Panels with chipId are Pro versions
         // with two network interfaces (WiFi & Ethernet) with separate mac addresses.
-        // If one network interface goes down, the board can fallback to the other
+        // If one network interface goes down, the panel can fallback to the other
         // interface and the accessories lose their associated UUID, which can
         // result in duplicated accessories, half of which become non-responsive.
         const panelShortUUID: string = 'chipId' in panelObject ? panelUUID.match(/([^-]+)$/i)![1] : panelObject.mac.replace(/:/g, '');
@@ -638,7 +638,7 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
   }
 
   /**
-   * The Konnected alarm panels do not have any logic for an "alarm system"
+   * The Konnected panels do not have any logic for an "alarm system"
    *
    * We need to provide alarm system logic that implements an alarm system with states:
    * - armed away: all sensors actively monitored for changes, countdown beeps from piezo, then trigger siren/flashing light
