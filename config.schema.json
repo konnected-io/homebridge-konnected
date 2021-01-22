@@ -143,7 +143,6 @@
                       "title": "Pro Only: 12 (binary sensors only)",
                       "enum": ["12"]
                     },
-                    
                     {
                       "title": "Pro Only: Alarm 1",
                       "enum": ["alarm1"]
@@ -215,9 +214,6 @@
                   "typeahead": {
                     "source": [
                       "Addition",
-                      "Alarm Box",
-                      "Alarm Panel",
-                      "Alarm System",
                       "Atrium",
                       "Attic",
                       "Auditorium",
@@ -338,9 +334,6 @@
                       "Sauna",
                       "Scullery",
                       "Second Floor",
-                      "Security Box",
-                      "Security Panel",
-                      "Security System",
                       "Server Room",
                       "Server Closet",
                       "Shed",
