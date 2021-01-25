@@ -22,12 +22,14 @@ import { v4 as uuidv4 } from 'uuid'; // for creating auth tokens
  *
  * The following operations are performed when the plugin is loaded:
  * - parse the user config
- * - restore existing accessories
- * - set up a listening server to listen for signals from the Konnected alarm panels and accessories
+ * - retrieve existing accessories from cachedAccessories
+ * - set up a listening server to listen for requests from the Konnected alarm panels
  * - discovery of Konnected alarm panels on the network
  * - add Konnected alarm panels to Homebridge config
- * - provision Konnected alarm panels with zone/pin assignments
- * - 
+ * - provision Konnected alarm panels with zones configured if assigned
+ * - CRUD accessories with characteristics in Homebridge/HomeKit if zones configured/assigned
+ * - listen for zone changes and update states in runtime cache and Homebridge/Homekit
+ * = react to state change requests from Homebridge/HomeKit and send actuator payload to panel
  */
 export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
   public readonly Service: typeof Service = this.api.hap.Service;
@@ -40,11 +42,11 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
   // this is used to store an accessible reference to inialized accessories (used in accessory cache disk writes - don't update this often)
   public readonly konnectedPlatformAccessories = {};
 
-  // this is used to store a non-blocking runtime state of the accessories
-  // this saves having to make network requests to the Konnected panels for states, which can cause delayed 'no-response' flag on the tiles in homekit
-  // the Konnected panels mostly do the pushing of states of sensors to Homebridge and update their states in Homebridge (and consequently
-  // homekit) at that time, but when homekit does it's own interval of polling, the states don't change inbetween those polls
-  public zoneStatesRuntimeCache: Record<string, unknown>[] = [];
+  // store a non-blocking runtime state of the accessories
+  // avoids making HTTP requests to the Konnected panels for states, which can cause delayed 'No Response' flag on the tiles in HomeKit
+  // the Konnected panels mostly do the pushing of states of sensors to Homebridge and update their states in HomeKit at that time,
+  // when HomeKit does it's own polling it asks Homebridge for states that don't change between polls
+  public zoneStatesRuntimeCache: ZoneStatesRuntimeCache[] = [];
 
   // define shared variables here
   private listenerIP: string =
