@@ -50,3 +50,19 @@ interface Zone {
   zoneType?: string;
   zoneLocation?: string;
 }
+
+/**
+ * Common object structure for the zone runtime cache.
+ */
+export interface ZoneStatesRuntimeCache {
+  UUID: string;
+  displayName: string;
+  type: string;
+  model: string;
+  serialNumber: string;
+  invert?: boolean;
+  state?: number | boolean;
+  temp?: number;
+  humidity?: number;
+  panel: PanelObjectInterface;
+}
