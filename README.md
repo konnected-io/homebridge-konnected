@@ -5,7 +5,7 @@
 # Konnected Homebridge Plugin
 [![GitHub Release](https://flat.badgen.net/github/release/konnected-io/homebridge-konnected/master?icon=github)](https://github.com/konnected-io/homebridge-konnected/releases)
 [![npm Release](https://flat.badgen.net/npm/v/homebridge-konnected?icon=npm)](https://www.npmjs.com/package/homebridge-konnected)
-[![TypeScript](https://flat.badgen.net/badge/typescript/100%?icon=typescript&label=typescript)]()
+[![TypeScript](https://flat.badgen.net/badge/typescript/100%?icon=typescript&label=typescript)](https://github.com/konnected-io/homebridge-konnected/search?l=typescript)
 
 [![Lint & Build](https://flat.badgen.net/github/checks/konnected-io/homebridge-konnected?icon=github&label=lint%20%26%20build)](https://github.com/konnected-io/homebridge-konnected/actions)
 [![npm Download Total](https://flat.badgen.net/npm/dt/homebridge-konnected?icon=npm)](https://www.npmjs.com/package/homebridge-konnected)
@@ -37,7 +37,6 @@
 # Upcoming Features
 
   * HomeKit native alarm system switch
-  * Ability to invert the state of sensors and actuators.
   * Professional 24/7 smart home monitoring (powered by [Noonlight](https://noonlight.com/))
   * HOOBS integration
 
@@ -60,13 +59,13 @@ The following two fields are required for the Konnected plugin to start.
 
 After loading this plugin **for the first time**, it will attempt to discover the Konnected panel(s) on the same local network as Homebridge. Once discovered, the plugin will try to:
 1. adjust the config.json file with the details of the discovered panel(s), assigning a name, a unique identifier, the IP address, and port for each panel;
-2. provision each panel, the result of which a fresh panel with unassigned zones.
+2. provision each panel, the result is a fresh panel with unassigned zones.
 
 
 ### Zone Settings Example for config.json:
 The best way to generate an error-free config.json is by installing and using the [Config UI X Plugin](https://github.com/oznu/homebridge-config-ui-x#readme) for Homebridge. The Konnected Homebridge plugin binds to the Config UI X configuration GUI which makes setting up the zones a trivial process.
 
-For those without Config UI X or are running this on HOOBS < 4.0.1 (not released yet), please see the following example configuration for this plugin:
+For those without Config UI X, or are running this on HOOBS < 4.0.1 (not released yet), please see the following example configuration for this plugin:
 ```json
 {
   "name": "Konnected",
@@ -193,18 +192,21 @@ If you cannot resolve the issue, please [Post a Forum Topic](https://help.konnec
 
 ### "Did You Try Rebooting It?":
 
-Sometimes fixing a problematic Homebridge/HOOBS/HomeKit accessory is as simple as deleting Homebridge's `cachedAccessories` file. First stop Homebridge/HOOBS, then delete the `cachedAccessories` file which is commonly located in its respective folder:
+Sometimes fixing a problematic Homebridge/HOOBS/HomeKit accessory is as simple as deleting Homebridge's `cachedAccessories` file.
 
-* Homebridge:
-  * Linux-based/MacOS: `~/.homebridge/accessories/cachedAccessories`
-  * Windows: `$HOME\.homebridge\Accessories\cachedAccessories`
-* HOOBS:
-  * HOOBSBox/Linux-based/MacOS:
-    * v3.x: `~/.hoobs/etc/accessories/cachedAccessories`
-    * v4.x: `/var/lib/hoobs/accessories/cachedAccessories`
-  * Windows (not supported for HOOBS whatsoever)
+1. First stop Homebridge/HOOBS.
+2. Delete the `cachedAccessories` file which is commonly located in its respective folder:
 
-Once the file is deleted, start up Homebridge/HOOBS and allow it to regenerate your accessories and the cache.
+    * Homebridge:
+      * Linux-based/MacOS: `~/.homebridge/accessories/cachedAccessories`
+      * Windows: `$HOME\.homebridge\Accessories\cachedAccessories`
+    * HOOBS:
+      * HOOBSBox/Linux-based/MacOS:
+      * v3.x: `~/.hoobs/etc/accessories/cachedAccessories`
+      * v4.x: `/var/lib/hoobs/accessories/cachedAccessories`
+      * <strike>Windows</strike> (HOOBS does not work on Windows)
+
+3. Once the file is deleted, start up Homebridge/HOOBS and allow it to regenerate your accessories and the cache.
 
 **WARNING:** Be careful to not delete the `persist` folder or its contents! Your Homebridge and devices will become unresponsive and you will have to entirely re-pair the Homebridge bridge (remove and re-scan the QR-code for Homebridge and set up all of your accessories/devices again).
 
