@@ -374,6 +374,11 @@
                     ]
                   }
                 },
+                "invert": {
+                  "title": "Invert the Zone State (binary sensors only)",
+                  "type": "boolean",
+                  "default": false
+                },
                 "switchSettings": {
                   "type": "object",
                   "expandable": true,
