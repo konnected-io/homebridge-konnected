@@ -336,6 +336,7 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
     let panelIP: string = panelObject.ip;
     let panelPort: number = panelObject.port;
     let panelBlink = true;
+    let panelName;
 
     // if there are panels in the plugin config
     if (typeof this.config.panels !== 'undefined') {
@@ -346,6 +347,7 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
           panelIP = configPanel.ipAddress ? configPanel.ipAddress : panelObject.ip;
           panelPort = configPanel.port ? configPanel.port : panelObject.port;
           panelBlink = typeof configPanel.blink !== 'undefined' ? configPanel.blink : true;
+          panelName = configPanel.name ? configPanel.name : '';
         }
       }
     }
@@ -467,9 +469,23 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
               // this is a V1-V2 panel
               // convert zone to a pin
               if (ZONES_TO_PINS[configPanelZone.zoneNumber]) {
-                panelZone = {
-                  pin: ZONES_TO_PINS[configPanelZone.zoneNumber],
-                };
+                // check if this zone is assigned as an actuator
+                if (ZONE_TYPES.actuators.includes(configPanelZone.zoneType)) {
+                  // validate if zone can be an actuator/switch
+                  if (configPanelZone.zoneNumber < 6 || configPanelZone.zoneNumber === 'out') {
+                    panelZone = {
+                      pin: ZONES_TO_PINS[configPanelZone.zoneNumber],
+                    };
+                  } else {
+                    this.log.warn(
+                      `Invalid Zone: Konnected V1-V2 Alarm Panels cannot have zone ${configPanelZone.zoneNumber} as an actuator/switch. Try zones 1-5 or 'out'.`
+                    );
+                  }
+                } else {
+                  panelZone = {
+                    pin: ZONES_TO_PINS[configPanelZone.zoneNumber],
+                  };
+                }
               } else {
                 this.log.warn(
                   `Invalid Zone: Cannot assign the zone number '${configPanelZone.zoneNumber}' for Konnected V1-V2 Alarm Panels. Try zones 1-6 or 'out'.`
@@ -658,6 +674,7 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
 
   /**
    * Updates the cached zone state when a panel reports a change in the zone's state.
+   * Panels only report state of sensors, so this will only fire for sensors and not actuators.
    *
    * @param req object  The request payload received for the zone at this plugin's listener REST endpoint.
    */
@@ -762,7 +779,6 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
    * @param device
    */
   actuateAccessory(zoneUUID, value) {
-    
     // loop through accessories and get the panel endpoint address and the model of the panel for the zone
     const existingAccessory = this.accessories.find((accessory) => accessory.UUID === zoneUUID);
 
