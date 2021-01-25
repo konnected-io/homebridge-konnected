@@ -94,25 +94,25 @@ export class KonnectedPlatformAccessory {
 
     this.platform.zoneStatesRuntimeCache.forEach((accessory) => {
       if (accessory.UUID === accessoryUUID) {
-        this.platform.log.debug(
-          `Get [${accessory.displayName}] '${stateType}' Characteristic: ${accessory[stateType]}`
-        );
-
         if (typeof accessory[stateType] === 'undefined') {
-          this.platform.log.debug(
-            `Assigning default state 0 to [${this.accessory.context.device.displayName}] '${
-              ZONE_TYPES_TO_ACCESSORIES[this.accessory.context.device.type]
-            }' Characteristic. Awaiting zone's first state change...`
-          );
-          if (stateType === 'switch') {
+          if (['motion', 'switch'].includes(stateType)) {
             accessory[stateType] = value = false;
           } else {
             accessory[stateType] = value = 0;
           }
-          
+          this.platform.log.debug(
+            `Assigning default state '${value}' to [${this.accessory.context.device.displayName}] (${this.accessory.context.device.serialNumber}) '${ZONE_TYPES_TO_ACCESSORIES[this.accessory.context.device.type]}' Characteristic. Awaiting zone's first state change...`
+          );
         } else {
-          value = Number(accessory[stateType]);
+          if (['motion', 'switch'].includes(stateType)) {
+            value = Boolean(accessory[stateType]);
+          } else {
+            value = Number(accessory[stateType]);
+          }
         }
+        this.platform.log.debug(
+          `Get [${accessory.displayName}] (${accessory.serialNumber}) '${stateType}' Characteristic: ${accessory[stateType]}`
+        );
       }
     });
     return value;
@@ -121,13 +121,18 @@ export class KonnectedPlatformAccessory {
   /**
    * Sets the state of the accessory in the state cache.
    */
-  setAccessoryState(accessoryUUID: string, stateType: string, value) {
+  setAccessoryState(accessoryUUID: string, stateType: string, value: boolean | number) {
     this.platform.zoneStatesRuntimeCache.forEach((accessory) => {
       if (accessory.UUID === accessoryUUID) {
-        this.platform.log.debug(
-          `Set [${this.accessory.context.device.displayName}] 'Switch' Characteristic: ${accessory[stateType]}`
-        );
+        if (['motion', 'switch'].includes(stateType)) {
+          value = Boolean(value);
+        } else {
+          value = Number(value);
+        }
         accessory[stateType] = value;
+        this.platform.log.debug(
+          `Set [${this.accessory.context.device.displayName}] (${accessory.serialNumber}) 'Switch' Characteristic: ${accessory[stateType]}`
+        );
       }
     });
     this.platform.actuateAccessory(accessoryUUID, value);
@@ -173,7 +178,7 @@ export class KonnectedPlatformAccessory {
   }
 
   setSwitchValue(value, callback: CharacteristicGetCallback) {
-    const state = this.setAccessoryState(this.accessory.context.device.UUID, 'switch', value);
+    this.setAccessoryState(this.accessory.context.device.UUID, 'switch', value);
     callback(null);
   }
 }

@@ -524,6 +524,7 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
                 UUID: zoneUUID,
                 displayName: displayName + ZONE_TYPES_TO_NAMES[configPanelZone.zoneType],
                 type: configPanelZone.zoneType,
+                invert: typeof configPanelZone.invert !== 'undefined' ? configPanelZone.invert : false,
                 model: panelModel + ' ' + ZONE_TYPES_TO_NAMES[configPanelZone.zoneType],
                 serialNumber: panelShortUUID + '-' + configPanelZone.zoneNumber,
                 panel: panelObject,
@@ -649,11 +650,23 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
     if (Array.isArray(accessoriesToUpdateArray) || accessoriesToUpdateArray!.length) {
       // update zones/accessories in Homebridge and HomeKit
       this.api.updatePlatformAccessories(accessoriesToUpdateArray);
+      // set the switch to inverted state immediately after it's been added to Homebridge/HomeKit
+      // accessoriesToUpdateArray.forEach((accessory) => {
+      //   if (['switch', 'alarmswitch'].includes(accessory.context.device.type) && accessory.context.device.invert === true) {
+      //     this.actuateAccessory(accessory.UUID, true);
+      //   }
+      // });
     }
 
     if (Array.isArray(accessoriesToAddArray) || accessoriesToAddArray!.length) {
       // add zones/accessories to Homebridge and HomeKit
       this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, accessoriesToAddArray);
+      // set the switch to inverted state immediately after it's been added to Homebridge/HomeKit
+      // accessoriesToAddArray.forEach((accessory) => {
+      //   if (['switch', 'alarmswitch'].includes(accessory.context.device.type) && accessory.context.device.invert === true) {
+      //     this.actuateAccessory(accessory.UUID, true);
+      //   }
+      // });
     }
   }
 
@@ -709,40 +722,64 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
       // loop through the accessories state cache and update state and service characteristic
       this.zoneStatesRuntimeCache.forEach((accessory) => {
         if (accessory.UUID === zoneUUID) {
+
+          let prevValue: boolean | number = req.body.state;
+          let stateValue: boolean | number = req.body.state;
+
+          // invert value if invert setting present in config for zone
+          if (accessory.invert === true) {
+
+            // we can't invert temperature or humidity sensors
+            // if it's not a temperature or humidity/temperature sensor we need to convert/invert the values
+            if (!['temperature', 'humidtemp'].includes(accessory.type)) {
+              if (accessory.type === 'motion') {
+                // boolean characteristics
+                prevValue = Boolean(req.body.state);
+                stateValue = req.body.state === 0 ? true : false;
+              } else {
+                // binary characteristics
+                stateValue = req.body.state === 0 ? 1 : 0;
+              }
+              this.log.debug(`${accessory.displayName} (${accessory.serialNumber}): inverted state from '${prevValue}' to '${stateValue}'`);
+            }
+            // otherwise we just leave the temperature or humidity/temperature sensor values alone
+
+          }
+
           switch (ZONE_TYPES_TO_ACCESSORIES[existingAccessory.context.device.type]) {
             case 'ContactSensor':
-              accessory.state = req.body.state;
+              accessory.state = stateValue;
               this.konnectedPlatformAccessories[existingAccessory.UUID].service.updateCharacteristic(
                 this.Characteristic.ContactSensorState,
-                req.body.state
+                stateValue
               );
               break;
             case 'MotionSensor':
-              accessory.state = req.body.state;
+              accessory.state = stateValue;
               this.konnectedPlatformAccessories[existingAccessory.UUID].service.updateCharacteristic(
                 this.Characteristic.MotionDetected,
-                req.body.state
+                stateValue
               );
               break;
             case 'LeakSensor':
-              accessory.state = req.body.state;
+              accessory.state = stateValue;
               this.konnectedPlatformAccessories[existingAccessory.UUID].service.updateCharacteristic(
                 this.Characteristic.LeakDetected,
-                req.body.state
+                stateValue
               );
               break;
             case 'SmokeSensor':
-              accessory.state = req.body.state;
+              accessory.state = stateValue;
               this.konnectedPlatformAccessories[existingAccessory.UUID].service.updateCharacteristic(
                 this.Characteristic.SmokeDetected,
-                req.body.state
+                stateValue
               );
               break;
             case 'TemperatureSensor':
               accessory.temp = req.body.temp;
               this.konnectedPlatformAccessories[existingAccessory.UUID].service.updateCharacteristic(
                 this.Characteristic.CurrentTemperature,
-                req.body.temp
+                accessory.temp
               );
               break;
             case 'HumiditySensor':
@@ -751,17 +788,10 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
                 this.Characteristic.CurrentRelativeHumidity,
                 accessory.humidity
               );
+              accessory.temp = req.body.temp;
               this.konnectedPlatformAccessories[existingAccessory.UUID].service.updateCharacteristic(
                 this.Characteristic.CurrentTemperature,
-                req.body.temp
-              );
-              break;
-
-            case 'Switch':
-              accessory.state = req.body.state;
-              this.konnectedPlatformAccessories[existingAccessory.UUID].service.updateCharacteristic(
-                this.Characteristic.On,
-                req.body.state
+                accessory.temp
               );
               break;
 
@@ -807,14 +837,20 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
               // Pro vs V1-V2 detection
               if ('model' in existingAccessory.context.device.panel) {
                 // this is a Pro panel
-                actuatorPayload.zone = zoneObject.zoneNumber;
                 panelEndpoint += 'zone';
+                if (ZONES[zoneObject.zoneNumber].includes('switch')) {
+                  actuatorPayload.zone = zoneObject.zoneNumber;
+                } else {
+                  this.log.warn(
+                    `Invalid Zone: Cannot actuate the zone '${zoneObject.zoneNumber}' for Konnected Pro Alarm Panels. Try zones 1-8, 'alarm1', 'out1', or 'alarm2_out2'.`
+                  );
+                }
               } else {
                 // this is a V1-V2 panel
                 panelEndpoint += 'device';
                 // convert zone to a pin
-                if (ZONES_TO_PINS[Number(zoneObject.zoneNumber)]) {
-                  actuatorPayload!.pin = ZONES_TO_PINS[Number(zoneObject.zoneNumber)];
+                if (zoneObject.zoneNumber < 6 || zoneObject.zoneNumber === 'out') {
+                  actuatorPayload!.pin = ZONES_TO_PINS[zoneObject.zoneNumber];
                 } else {
                   this.log.warn(
                     `Invalid Zone: Cannot actuate the zone '${zoneObject.zoneNumber}' for Konnected V1-V2 Alarm Panels. Try zones 1-5 or 'out'.`
@@ -856,7 +892,7 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
                       // this is a momentary switch, reset the state after done
                       setTimeout(() => {
                         // if state is on, turn off
-                        const restoreState = value === true ? 0 : 1;
+                        const restoreState = value === true ? false : true;
                         // update Homebridge/HomeKit displayed state
                         this.konnectedPlatformAccessories[zoneUUID].service.updateCharacteristic(
                           this.Characteristic.On,
@@ -882,7 +918,7 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
             }
           });
         }
-      });      
+      });
     }
   }
 }
