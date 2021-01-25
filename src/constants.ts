@@ -44,8 +44,7 @@ export const ZONE_TYPES = {
     'smoke',
   ],
   dht_sensors: [
-    'temphumid',
-    'temperature_humidity',
+    'humidtemp',
   ],
   ds18b20_sensors: [
     'temperature',
@@ -65,8 +64,7 @@ export const ZONE_TYPES_TO_ACCESSORIES = {
   water: 'LeakSensor',                     // https://developers.homebridge.io/#/service/LeakSensor
   smoke: 'SmokeSensor',                    // https://developers.homebridge.io/#/service/SmokeSensor
   temperature: 'TemperatureSensor',        // https://developers.homebridge.io/#/service/TemperatureSensor
-  temphumid: 'HumiditySensor',             // https://developers.homebridge.io/#/service/HumiditySensor
-  temperature_humidity: 'HumiditySensor',  // https://developers.homebridge.io/#/service/HumiditySensor
+  humidtemp: 'HumiditySensor',             // https://developers.homebridge.io/#/service/HumiditySensor
   armingswitch: 'Switch',                  // https://developers.homebridge.io/#/service/SecuritySystem
   siren: 'Switch',                         // https://developers.homebridge.io/#/service/Switch
   strobe: 'Switch',                        // https://developers.homebridge.io/#/service/Switch
@@ -80,8 +78,7 @@ export const ZONE_TYPES_TO_NAMES = {
   water: 'Water Sensor',
   smoke: 'Smoke Sensor',
   temperature: 'Temperature Sensor',
-  temphumid: 'Temperature & Humidity Sensor',
-  temperature_humidity: 'Temperature & Humidity Sensor',
+  humidtemp: 'Humidity & Temperature Sensor',
   armingswitch: 'Alarm Switch',
   siren: 'Alarm Siren',
   strobe: 'Alarm Strobe Light',

@@ -163,7 +163,7 @@ export class KonnectedPlatformAccessory {
   }
 
   getHumiditySensorValue(callback: CharacteristicGetCallback) {
-    const state = this.getAccessoryState(this.accessory.context.device.UUID, 'humi');
+    const state = this.getAccessoryState(this.accessory.context.device.UUID, 'humidity');
     callback(null, state);
   }
 

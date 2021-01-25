@@ -179,7 +179,7 @@
                     },
                     {
                       "title": "Sensor: Temperature / Humidity Sensor (eg. DHT)",
-                      "enum": ["temphumid"]
+                      "enum": ["humidtemp"]
                     },
                     {
                       "title": "Sensor: Water Leak / Rain Sensor",

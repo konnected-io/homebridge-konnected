@@ -722,11 +722,10 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
               );
               break;
             case 'HumiditySensor':
-              accessory.humi = Math.round(req.body.humi);
-              accessory.temp = req.body.temp;
+              accessory.humidity = Math.round(req.body.humi);
               this.konnectedPlatformAccessories[existingAccessory.UUID].service.updateCharacteristic(
                 this.Characteristic.CurrentRelativeHumidity,
-                accessory.humi
+                accessory.humidity
               );
               this.konnectedPlatformAccessories[existingAccessory.UUID].service.updateCharacteristic(
                 this.Characteristic.CurrentTemperature,
