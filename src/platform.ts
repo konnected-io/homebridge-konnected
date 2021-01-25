@@ -87,7 +87,7 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
    * This function is invoked when Homebridge restores cached accessories from disk at startup.
    */
   configureAccessory(accessory: PlatformAccessory) {
-    this.log.info(`Loading accessory from cache: ${accessory.displayName} (${accessory.UUID})`);
+    this.log.info(`Loading accessory from cache: ${accessory.displayName} (${accessory.context.device.serialNumber})`);
 
     // add the restored accessory to the accessories cache so we can track if it has already been registered
     this.accessories.push(accessory);
@@ -119,7 +119,6 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
     process.on('SIGINT', cleanup).on('SIGTERM', cleanup);
 
     const respond = (req, res) => {
-
       // bearer auth token not provided
       if (typeof req.headers.authorization === 'undefined') {
         this.log.error(`Authentication failed for ${req.params.id}, token missing, with request body:`, req.body);
@@ -140,11 +139,6 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
         // process the update of the state
         this.updateAccessoryState(req);
       } else {
-        // rediscover and reprovision panels
-        if (this.ssdpDiscovering === false) {
-          this.discoverPanels();
-        }
-
         // send the following response
         res.status(401).json({
           success: false,
@@ -154,6 +148,12 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
         this.log.error(`Authentication failed for ${req.params.id}, token not valid`);
         this.log.error('Authentication token:', req.headers.authorization.split('Bearer ').pop());
         this.log.error(req.body);
+
+        // rediscover and reprovision panels
+        if (this.ssdpDiscovering === false) {
+          this.log.debug('Rediscovering and reprovisioning panels...');
+          this.discoverPanels();
+        }
       }
     };
 
@@ -248,7 +248,7 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
     setTimeout(() => {
       ssdpClient.stop();
       this.ssdpDiscovering = false;
-      console.log('devices:', ssdpDeviceIDs);
+      this.log.debug('Discovery complete. Found panels:\n' + JSON.stringify(ssdpDeviceIDs, null, 2));
     }, this.ssdpTimeout);
   }
 
@@ -371,6 +371,10 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
       ...panelPayloadAccessories,
     };
 
+    this.log.debug(
+      `Panel ${panelName} ${panelSettingsEndpoint} payload:\n` + JSON.stringify(panelConfigurationPayload, null, 2)
+    );
+
     const provisionPanelResponse = async (url: string) => {
       try {
         await fetch(url, {
@@ -451,7 +455,7 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
                   };
                 } else {
                   this.log.warn(
-                    `Invalid Zone: Konnected Pro Alarm Panels cannot have zone ${configPanelZone.zoneNumber} as an actuator/switch. Try zones 1-8, alarm1, out1, or alarm2_out2.`
+                    `Invalid Zone: Konnected Pro Alarm Panels cannot have zone ${configPanelZone.zoneNumber} as an actuator/switch. Try zones 1-8, 'alarm1', 'out1', or 'alarm2_out2'.`
                   );
                 }
               } else {
@@ -468,7 +472,7 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
                 };
               } else {
                 this.log.warn(
-                  `Invalid Zone: Cannot assign the zone number '${configPanelZone.zoneNumber}' for Konnected V1-V2 Alarm Panels. Try zones `
+                  `Invalid Zone: Cannot assign the zone number '${configPanelZone.zoneNumber}' for Konnected V1-V2 Alarm Panels. Try zones 1-6 or 'out'.`
                 );
               }
             }
@@ -570,7 +574,7 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
     if (Array.isArray(retainedAccessoriesArray) && retainedAccessoriesArray!.length > 0) {
       retainedAccessoriesArray.forEach((accessory) => {
         if (typeof accessory !== 'undefined') {
-          this.log.debug(`Retained accessory: ${accessory.displayName}`);
+          this.log.debug(`Retained accessory: ${accessory.displayName} (${accessory.context.device.serialNumber})`);
         }
       });
     }
@@ -578,9 +582,7 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
     if (Array.isArray(accessoriesToRemoveArray) && accessoriesToRemoveArray!.length > 0) {
       // unregister stale or missing zones/accessories in Homebridge and HomeKit
       accessoriesToRemoveArray.forEach((accessory) => {
-        this.log.info(
-          `Removing stale accessory: ${accessory.displayName} (${accessory.context.device.model})`
-        );
+        this.log.info(`Removing accessory: ${accessory.displayName} (${accessory.context.device.serialNumber})`);
       });
       this.api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, accessoriesToRemoveArray);
     }
@@ -598,7 +600,7 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
       if (existingAccessory && existingAccessory.context.device.UUID === panelZoneObject.UUID) {
         // then the accessory already exists
         this.log.info(
-          `Updating existing accessory: ${panelZoneObject.displayName} (${panelZoneObject.model})`
+          `Updating existing accessory: ${existingAccessory.context.device.displayName} (${existingAccessory.context.device.serialNumber})`
         );
 
         // update zone object in the platform accessory cache
@@ -614,7 +616,7 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
       } else {
         // otherwise we're adding a new accessory
         this.log.info(
-          `Adding new accessory: ${panelZoneObject.displayName} (${panelZoneObject.model})`
+          `Adding new accessory: ${panelZoneObject.displayName} (${panelZoneObject.serialNumber})`
         );
 
         // build Homebridge/HomeKit platform accessory
@@ -682,7 +684,10 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
 
     // check if the accessory already exists
     if (existingAccessory) {
-      this.log.debug(`${existingAccessory.displayName}:`, deviceState);
+      this.log.debug(
+        `${existingAccessory.displayName} (${existingAccessory.context.device.serialNumber}):`,
+        deviceState
+      );
 
       // loop through the accessories state cache and update state and service characteristic
       this.zoneStatesRuntimeCache.forEach((accessory) => {
@@ -796,7 +801,7 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
                   actuatorPayload!.pin = ZONES_TO_PINS[Number(zoneObject.zoneNumber)];
                 } else {
                   this.log.warn(
-                    `Invalid Zone: Cannot actuate the zone number '${zoneObject.zoneNumber}' for Konnected V1-V2 Alarm Panels.`
+                    `Invalid Zone: Cannot actuate the zone '${zoneObject.zoneNumber}' for Konnected V1-V2 Alarm Panels. Try zones 1-5 or 'out'.`
                   );
                 }
               }
@@ -844,7 +849,10 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
                         // update the state cache for subsequent HomeKit get calls
                         this.zoneStatesRuntimeCache.forEach((accessory) => {
                           if (accessory.UUID === zoneUUID) {
-                            accessory.switch = restoreState;
+                            accessory.state = restoreState;
+                            this.log.debug(
+                              `Set [${accessory.displayName}] (${accessory.serialNumber}) 'Switch' Characteristic: ${restoreState}`
+                            );
                           }
                         });
                       }, actuatorDuration);
