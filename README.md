@@ -84,9 +84,10 @@ For those without Config UI X, or are running this on HOOBS < 4.0.1 (not release
         {
           "zoneNumber": 1,
           "zoneType": "switch",
-          "zoneLocation": "Front Entrance",
+          "zoneLocation": "Living Room",
           "invert": false,
           "switchSettings": {
+            "trigger": 1,
             "pulseDuration": 1000,
             "pulsePause": 500,
             "pulseRepeat": 3
@@ -94,8 +95,8 @@ For those without Config UI X, or are running this on HOOBS < 4.0.1 (not release
         },
         {
           "zoneNumber": 2,
-          "zoneType": "motion",
-          "zoneLocation": "Living Room",
+          "zoneType": "contact",
+          "zoneLocation": "Front Entrance",
           "invert": false
         }
       ]
