@@ -37,7 +37,11 @@
 
   * HomeKit native alarm system switch
   * Professional 24/7 smart home monitoring (powered by [Noonlight](https://noonlight.com/))
-  * HOOBS integration
+  * Adding option to set poll intervals for DHT/DS18B20 sensors
+  * Add option to have a panic button tile to trigger the alarm system
+  * Add option to have a switch tile that reports the state of a siren, allowing you to turn the siren off
+  * HOOBS integration (this may happen automatically when HOOBS 4.x comes out and supports the configuration schema used in Homebridge)
+  
 
 # Installation
 
