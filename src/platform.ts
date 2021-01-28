@@ -435,12 +435,20 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
           configPanel.zones.forEach((configPanelZone) => {
             // create type interface for panelZone variable
             interface PanelZone {
-              pin?: number;
-              zone?: number;
+              pin?: string;
+              zone?: string;
+              trigger?: number;
             }
             let panelZone: PanelZone = {};
 
-            // Pro vs V1-V2 detection
+            // assign the trigger trigger value on startup
+            const zoneTrigger =
+              typeof configPanelZone.switchSettings !== 'undefined'
+                ? configPanelZone.switchSettings.trigger !== 'undefined'
+                  ? configPanelZone.switchSettings.trigger
+                  : 0
+                : 0;
+
             if ('model' in panelObject) {
               // this is a Pro panel
               // check if zone is improperly assigned as the V1-V2 panel 'out' zone
@@ -452,9 +460,8 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
                 // this zone is assigned as an actuator
                 // validate if zone can be an actuator/switch
                 if (ZONES[configPanelZone.zoneNumber].includes(configPanelZone.zoneType)) {
-                  panelZone = {
-                    zone: configPanelZone.zoneNumber,
-                  };
+                  panelZone.zone = configPanelZone.zoneNumber;
+                  panelZone.trigger = zoneTrigger === 0 ? 0 : 1;
                 } else {
                   this.log.warn(
                     `Invalid Zone: Konnected Pro Alarm Panels cannot have zone ${configPanelZone.zoneNumber} as an actuator/switch. Try zones 1-8, 'alarm1', 'out1', or 'alarm2_out2'.`
@@ -473,9 +480,8 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
                 if (ZONE_TYPES.actuators.includes(configPanelZone.zoneType)) {
                   // validate if zone can be an actuator/switch
                   if (configPanelZone.zoneNumber < 6 || configPanelZone.zoneNumber === 'out') {
-                    panelZone = {
-                      pin: ZONES_TO_PINS[configPanelZone.zoneNumber],
-                    };
+                    panelZone.pin = ZONES_TO_PINS[configPanelZone.zoneNumber];
+                    panelZone.trigger = zoneTrigger === 0 ? 0 : 1;
                   } else {
                     this.log.warn(
                       `Invalid Zone: Konnected V1-V2 Alarm Panels cannot have zone ${configPanelZone.zoneNumber} as an actuator/switch. Try zones 1-5 or 'out'.`
@@ -519,6 +525,7 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
               zonesCheck.push(zoneUUID);
 
               const displayName = configPanelZone.zoneLocation ? configPanelZone.zoneLocation + ' ' : '';
+              const triggerState = typeof configPanelZone.switchSettings !== 'undefined' ? configPanelZone.switchSettings.trigger !== 'undefined' ? configPanelZone.switchSettings.trigger : 0 : 0;
 
               const zoneObject = {
                 UUID: zoneUUID,
@@ -527,6 +534,7 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
                 invert: typeof configPanelZone.invert !== 'undefined' ? configPanelZone.invert : false,
                 model: panelModel + ' ' + ZONE_TYPES_TO_NAMES[configPanelZone.zoneType],
                 serialNumber: panelShortUUID + '-' + configPanelZone.zoneNumber,
+                trigger: triggerState,
                 panel: panelObject,
               };
 
