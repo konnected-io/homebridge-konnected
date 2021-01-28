@@ -65,5 +65,6 @@ export interface ZoneStatesRuntimeCache {
   state?: number | boolean;
   temp?: number;
   humidity?: number;
+  switch?: number | boolean;
   panel: PanelObjectInterface;
 }
