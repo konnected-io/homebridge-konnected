@@ -158,8 +158,9 @@ For those without Config UI X, or are running this on HOOBS < 4.0.1 (not release
       * "strobe" *(actuator switch)*
       * "switch" *(actuator switch)*
     * **"zoneLocation"**: *(optional)* Custom name for the zone's location (Example: Kitchen).
-    * **"invert"**: *(optional)* Flip the state of a zone sensor's input or switch's output.
+    * **"invert"**: *(optional)* Flip the state of a zone sensor's input.
     * **"switchSettings"**: *(optional)* Switch-only object of settings when actuating the switch:
+      * **"trigger"**: *(required, default: High)* Trigger state when switch is considered 'on'.
       * **"pulseDuration"**: *(optional)* How long the pulse is maintained in the on state for (in milliseconds).
       * **"pulsePause"**: *(conditional)* Pause between pulses (in milliseconds - required if pulseRepeat exists).
       * **"pulseRepeat"**: *(conditional)* Times to repeat pulse sequence (required if pulsePause exists - infinite set to a value of -1)
