@@ -119,6 +119,7 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
     process.on('SIGINT', cleanup).on('SIGTERM', cleanup);
 
     const respond = (req, res) => {
+
       // bearer auth token not provided
       if (typeof req.headers.authorization === 'undefined') {
         this.log.error(`Authentication failed for ${req.params.id}, token missing, with request body:`, req.body);
@@ -524,16 +525,16 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
               // if not a duplicate, push the zone's UUID into the zoneCheck array
               zonesCheck.push(zoneUUID);
 
-              const displayName = configPanelZone.zoneLocation ? configPanelZone.zoneLocation + ' ' : '';
+              const zoneLocation = configPanelZone.zoneLocation ? configPanelZone.zoneLocation + ' ' : '';
               const triggerState = typeof configPanelZone.switchSettings !== 'undefined' ? configPanelZone.switchSettings.trigger !== 'undefined' ? configPanelZone.switchSettings.trigger : 0 : 0;
 
               const zoneObject = {
                 UUID: zoneUUID,
-                displayName: displayName + ZONE_TYPES_TO_NAMES[configPanelZone.zoneType],
+                displayName: zoneLocation + ZONE_TYPES_TO_NAMES[configPanelZone.zoneType],
                 type: configPanelZone.zoneType,
-                invert: typeof configPanelZone.invert !== 'undefined' ? configPanelZone.invert : false,
                 model: panelModel + ' ' + ZONE_TYPES_TO_NAMES[configPanelZone.zoneType],
                 serialNumber: panelShortUUID + '-' + configPanelZone.zoneNumber,
+                invert: configPanelZone.invert ? configPanelZone.invert : false,
                 trigger: triggerState,
                 panel: panelObject,
               };
@@ -700,23 +701,23 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
    * @param req object  The request payload received for the zone at this plugin's listener REST endpoint.
    */
   updateAccessoryState(req) {
-    let deviceZone = '';
-    let deviceState = '';
+    let panelZone = '';
+    let zoneState = '';
     if ('pin' in req.body) {
       // convert a pin to a zone
       Object.entries(ZONES_TO_PINS).map(([key, value]) => {
         if (value === req.body.pin) {
-          deviceZone = key;
-          deviceState = JSON.stringify(req.body) + ` (zone: ${deviceZone})`;
+          panelZone = key;
+          zoneState = JSON.stringify(req.body) + ` (zone: ${panelZone})`;
         }
       });
     } else {
       // use the zone
-      deviceZone = req.body.zone;
-      deviceState = JSON.stringify(req.body);
+      panelZone = req.body.zone;
+      zoneState = JSON.stringify(req.body);
     }
 
-    const zoneUUID = this.api.hap.uuid.generate(req.params.id + '-' + deviceZone);
+    const zoneUUID = this.api.hap.uuid.generate(req.params.id + '-' + panelZone);
 
     const existingAccessory = this.accessories.find((accessory) => accessory.UUID === zoneUUID);
 
@@ -724,7 +725,7 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
     if (existingAccessory) {
       this.log.debug(
         `${existingAccessory.displayName} (${existingAccessory.context.device.serialNumber}):`,
-        deviceState
+        zoneState
       );
 
       // loop through the accessories state cache and update state and service characteristic
