@@ -134,11 +134,56 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
 
       // validate provided bearer auth token
       if (this.listenerAuth.includes(req.headers.authorization.split('Bearer ').pop())) {
-        // send the following response
-        res.status(200).json({ success: true });
+        if (['POST', 'PUT'].includes(req.method)) {
+          // panel request to update zone
+          res.status(200).json({ success: true });
+          // process the update of the state
+          this.updateAccessoryState(req);
+        } else if ('GET' === req.method) {
+          // panel request to get the state of a Homebridge/HomeKit switch
+          // then reply back to the panel to set the "source of truth" actuator state
 
-        // process the update of the state
-        this.updateAccessoryState(req);
+          // create type interface for responsePayload variable
+          interface ResponsePayload {
+            success: true;
+            pin?: string;
+            zone?: string;
+            state?: number;
+          }
+
+          // setup response payload to reply with
+          const responsePayload: ResponsePayload = {
+            success: true,
+          };
+
+          // default to zone for Pro panel, but may be replaced if V1-V1 panel
+          let requestPanelZone = req.query.zone;
+
+          if (req.query.pin) {
+            // V1-V2 panel
+            // change requestPanelZone variable to the zone equivalent of a pin on V1-V2 panels
+            Object.entries(ZONES_TO_PINS).find(([zone, pin]) => {
+              if (pin === Number(req.query.pin)) {
+                requestPanelZone = zone;
+              }
+            });
+            responsePayload.pin = req.query.pin;
+          } else if (req.query.zone) {
+            // Pro panel
+            responsePayload.zone = requestPanelZone;
+          }
+
+          this.zoneStatesRuntimeCache.find((accessory) => {
+            if (accessory.serialNumber === req.params.id + '-' + requestPanelZone) {
+              responsePayload.state = typeof accessory.switch !== 'undefined' ? Number(accessory.switch) : 0;
+            }
+          });
+          this.log.debug(
+            `Panel (${req.params.id}) requested zone '${requestPanelZone}' initial state, sending value of ${responsePayload.state}`
+          );
+
+          res.status(200).json(responsePayload);
+        }
       } else {
         // send the following response
         res.status(401).json({
@@ -162,7 +207,8 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
     app
       .route('/api/konnected/device/:id')
       .put(respond) // Alarm Panel V1-V2
-      .post(respond); // Alarm Panel Pro
+      .post(respond) // Alarm Panel Pro
+      .get(respond); // For Actuator Requests
   }
 
   /**
