@@ -61,6 +61,7 @@ export interface ZoneStatesRuntimeCache {
   model: string;
   serialNumber: string;
   invert?: boolean;
+  trigger?: boolean;
   state?: number | boolean;
   temp?: number;
   humidity?: number;
