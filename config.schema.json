@@ -388,6 +388,23 @@
                       "description": "<span class='primary-text'>Define additional options (switches only).</span>",
                       "type": "object"
                     },
+                    "trigger": {
+                      "title": "Output When On",
+                      "description": "Trigger state when switch is considered 'on'.",
+                      "type": "number",
+                      "required": true,
+                      "default": "1",
+                      "oneOf": [
+                        {
+                          "title": "High",
+                          "enum": ["1"]
+                        },
+                        {
+                          "title": "Low",
+                          "enum": ["0"]
+                        }
+                      ]
+                    },
                     "pulseDuration": {
                       "title": "Pulse Duration (ms) (optional)",
                       "description": "How long the pulse is maintained in the on state for.",
