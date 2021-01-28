@@ -5,7 +5,6 @@
 # Konnected Homebridge Plugin
 [![GitHub Release](https://flat.badgen.net/github/release/konnected-io/homebridge-konnected/master?icon=github)](https://github.com/konnected-io/homebridge-konnected/releases)
 [![npm Release](https://flat.badgen.net/npm/v/homebridge-konnected?icon=npm)](https://www.npmjs.com/package/homebridge-konnected)
-[![TypeScript](https://flat.badgen.net/badge/typescript/100%?icon=typescript&label=typescript)](https://github.com/konnected-io/homebridge-konnected/search?l=typescript)
 
 [![Lint & Build](https://flat.badgen.net/github/checks/konnected-io/homebridge-konnected?icon=github&label=lint%20%26%20build)](https://github.com/konnected-io/homebridge-konnected/actions)
 [![npm Download Total](https://flat.badgen.net/npm/dt/homebridge-konnected?icon=npm)](https://www.npmjs.com/package/homebridge-konnected)
