@@ -2,21 +2,21 @@
  * For Pro Panel
  */
 export const ZONES = {
-  1: ['sensor', 'switch', 'armingswitch'],
-  2: ['sensor', 'switch', 'armingswitch'],
-  3: ['sensor', 'switch', 'armingswitch'],
-  4: ['sensor', 'switch', 'armingswitch'],
-  5: ['sensor', 'switch', 'armingswitch'],
-  6: ['sensor', 'switch', 'armingswitch'],
-  7: ['sensor', 'switch', 'armingswitch'],
-  8: ['sensor', 'switch', 'armingswitch'],
-  9: ['sensor'],
+  1:  ['sensor', 'beeper', 'siren', 'switch'],
+  2:  ['sensor', 'beeper', 'siren', 'switch'],
+  3:  ['sensor', 'beeper', 'siren', 'switch'],
+  4:  ['sensor', 'beeper', 'siren', 'switch'],
+  5:  ['sensor', 'beeper', 'siren', 'switch'],
+  6:  ['sensor', 'beeper', 'siren', 'switch'],
+  7:  ['sensor', 'beeper', 'siren', 'switch'],
+  8:  ['sensor', 'beeper', 'siren', 'switch'],
+  9:  ['sensor'],
   10: ['sensor'],
   11: ['sensor'],
   12: ['sensor'],
-  alarm1: ['sensor', 'switch', 'armingswitch'],
-  out1: ['sensor', 'switch', 'armingswitch'],
-  alarm2_out2: ['sensor', 'switch', 'armingswitch'],
+  alarm1:       ['beeper', 'siren', 'switch'],
+  out1:         ['beeper', 'siren', 'switch'],
+  alarm2_out2:  ['beeper', 'siren', 'switch'],
 };
 
 /**
@@ -33,7 +33,7 @@ export const ZONES_TO_PINS = {
 };
 
 /**
- * For Zone Logic
+ * For Zone Logic     
  */
 export const ZONE_TYPES = {
   sensors: [
@@ -50,37 +50,32 @@ export const ZONE_TYPES = {
     'temperature',
   ],
   actuators: [
-    'armingswitch',
+    'beeper',
     'siren',
     'strobe',
     'switch',
   ],
 };
 
-export const ZONE_TYPES_TO_ACCESSORIES = {
-  contact: 'ContactSensor',                // https://developers.homebridge.io/#/service/ContactSensor
-  motion: 'MotionSensor',                  // https://developers.homebridge.io/#/service/MotionSensor
-  glass: 'ContactSensor',                  // https://developers.homebridge.io/#/service/ContactSensor
-  water: 'LeakSensor',                     // https://developers.homebridge.io/#/service/LeakSensor
-  smoke: 'SmokeSensor',                    // https://developers.homebridge.io/#/service/SmokeSensor
-  temperature: 'TemperatureSensor',        // https://developers.homebridge.io/#/service/TemperatureSensor
-  humidtemp: 'HumiditySensor',             // https://developers.homebridge.io/#/service/HumiditySensor
-  armingswitch: 'Switch',                  // https://developers.homebridge.io/#/service/SecuritySystem
-  siren: 'Switch',                         // https://developers.homebridge.io/#/service/Switch
-  strobe: 'Switch',                        // https://developers.homebridge.io/#/service/Switch
-  switch: 'Switch',                        // https://developers.homebridge.io/#/service/Switch
+export const TYPES_TO_ACCESSORIES = {
+  securitysystem: ['SecuritySystem',    'Security System'],               // https://developers.homebridge.io/#/service/SecuritySystem
+  contact:        ['ContactSensor',     'Contact Sensor'],                // https://developers.homebridge.io/#/service/ContactSensor
+  motion:         ['MotionSensor',      'Motion Sensor'],                 // https://developers.homebridge.io/#/service/MotionSensor
+  glass:          ['ContactSensor',     'Glass Break Sensor'],            // https://developers.homebridge.io/#/service/ContactSensor
+  water:          ['LeakSensor',        'Water Sensor'],                  // https://developers.homebridge.io/#/service/LeakSensor
+  smoke:          ['SmokeSensor',       'Smoke Sensor'],                  // https://developers.homebridge.io/#/service/SmokeSensor
+  temperature:    ['TemperatureSensor', 'Temperature Sensor'],            // https://developers.homebridge.io/#/service/TemperatureSensor
+  humidtemp:      ['HumiditySensor',    'Humidity & Temperature Sensor'], // https://developers.homebridge.io/#/service/HumiditySensor
+  beeper:         ['Switch',            'Beeper'],                        // https://developers.homebridge.io/#/service/Switch
+  siren:          ['Switch',            'Siren'],                         // https://developers.homebridge.io/#/service/Switch
+  strobe:         ['Switch',            'Strobe Light'],                  // https://developers.homebridge.io/#/service/Switch
+  switch:         ['Switch',            'Generic Switch'],                // https://developers.homebridge.io/#/service/Switch
 };
 
-export const ZONE_TYPES_TO_NAMES = {
-  contact: 'Contact Sensor',
-  motion: 'Motion Sensor',
-  glass: 'Glass Break Sensor',
-  water: 'Water Sensor',
-  smoke: 'Smoke Sensor',
-  temperature: 'Temperature Sensor',
-  humidtemp: 'Humidity & Temperature Sensor',
-  armingswitch: 'Alarm Switch',
-  siren: 'Alarm Siren',
-  strobe: 'Alarm Strobe Light',
-  switch: 'Generic Switch',
+export const ALARM_CONSTANTS = {
+  STAY_ARM: 0,
+  AWAY_ARM: 1,
+  NIGHT_ARM: 2,
+  DISARMED: 3,
+  ALARM_TRIGGERED: 4,
 };
