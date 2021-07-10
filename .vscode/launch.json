@@ -13,7 +13,8 @@
       "runtimeArgs": [
         "run", "debug"
       ],
-      "console": "internalConsole",
+      "args": ["--colors"],
+      "console": "externalTerminal",
       "internalConsoleOptions": "neverOpen",
       "outputCapture": "std",
       "program": "${workspaceFolder}/src/index.js",
