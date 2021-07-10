@@ -35,6 +35,7 @@ export interface ConfigPlatformInterface extends PlatformConfig {
     listenerPort?: number;
     listenerIP?: string;
     discoveryTimeout?: string;
+    entryDelay?: number;
   };
   panels?: Panel;
 }
@@ -46,6 +47,7 @@ interface Panel {
 }
 
 interface Zone {
+  enabled?: boolean;
   zoneNumber?: number;
   zoneType?: string;
   zoneLocation?: string;
@@ -54,17 +56,19 @@ interface Zone {
 /**
  * Common object structure for the zone runtime cache.
  */
-export interface ZoneStatesRuntimeCache {
+export interface RuntimeCacheInterface {
   UUID: string;
   displayName: string;
+  enabled: boolean;
   type: string;
   model: string;
   serialNumber: string;
-  invert?: boolean;
-  trigger?: boolean;
-  state?: number | boolean;
-  temp?: number;
-  humidity?: number;
-  switch?: number | boolean;
   panel: PanelObjectInterface;
+  invert?: boolean;
+  audibleBeep?: boolean;
+  trigger?: number | boolean;
+  triggerableModes?: [];
+  humi?: number;
+  temp?: number;
+  state?: number | boolean;
 }
