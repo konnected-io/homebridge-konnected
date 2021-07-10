@@ -110,13 +110,11 @@ For those without Config UI X, or are running this on HOOBS < 4.0, please see th
           "binarySensorSettings": {
             "invert": false,
             "audibleBeep": true,
-            "triggerableModes": {
-              [
-                "0",
-                "1",
-                "2"
-              ]
-            }
+            "triggerableModes": [
+              "0",
+              "1",
+              "2"
+            ]
           }
         }
       ]
