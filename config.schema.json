@@ -5,7 +5,7 @@
   "schema": {
     "name": {
       "title": "Name",
-      "description": "The name that will appear in your homebridge log.",
+      "description": "The name that will appear in your Homebridge log.",
       "type": "string",
       "default": "Konnected",
       "required": true
@@ -17,14 +17,14 @@
       "properties": {
         "listenerIP": {
           "title": "Listening IP (optional)",
-          "description": "Force panels to send zone state changes to an IPV4 address that represents this system on the network. <i>In some cases, your system may have multiple network adapters registered.</i>",
+          "description": "If the system hosting Homebridge/HOOBS has multiple active network adapters, use this field to force the network IPv4 address that this plugin will listen for zone state changes on.",
           "type": "string",
           "format": "ipv4",
           "placeholder": "(default: automatically selected)"
         },
         "listenerPort": {
           "title": "Listening Port (optional)",
-          "description": "Force panels to send zone state changes to a specific listening port on this system (between 1000 and 65535).",
+          "description": "Use this field to force the network port that this plugin will listen for zone state changes on (between 1000 and 65535).",
           "type": "number",
           "step": 1,
           "minimum": 1000,
@@ -37,8 +37,48 @@
           "type": "number",
           "step": 1,
           "minimum": 1,
-          "maximum": 300,
+          "maximum": 30,
           "placeholder": "(default: 5 seconds)"
+        },
+        "entryDelaySettings": {
+          "type": "object",
+          "properties": {
+            "": {
+              "description": "Configurable settings for when the security system has been violated while armed to \"away\" mode.<br>By default the beeper will have a constant sound, but if you use the example values, it will produce a long tone once every second so you know how much time you have to disarm the security system.",
+              "type": "object"
+            },
+            "delay": {
+              "title": "Delay (optional)",
+              "description": "The entry delay before the security system is triggered and the siren zone is triggered.",
+              "type": "number",
+              "step": 1,
+              "minimum": 0,
+              "placeholder": "(default: 30 seconds)"
+            },
+            "pulseDuration": {
+              "title": "Beeper Pulse Duration (ms) (optional)",
+              "description": "How long the pulse is maintained in the on state for.",
+              "type": "number",
+              "step": 1,
+              "minimum": 1,
+              "placeholder": "(E.g., 975)"
+            },
+            "pulsePause": {
+              "title": "Beeper Pause Between Pulses (ms) (optional, but required if Times to Repeat exists)",
+              "type": "number",
+              "step": 1,
+              "minimum": 1,
+              "placeholder": "(E.g., 25)"
+            },
+            "pulseRepeat": {
+              "title": "Beeper Times to Repeat (optional, but required if Pause Between Pulses exists)",
+              "description": "To repeat indefinitely, use -1 as the value.",
+              "type": "number",
+              "step": 1,
+              "minimum": -1,
+              "placeholder": "(E.g., -1)"
+            }
+          }
         }
       }
     },
@@ -87,11 +127,15 @@
             "items": {
               "type": "object",
               "properties": {
+                "enabled": {
+                  "title": "Enabled",
+                  "type": "boolean",
+                  "default": "true"
+                },
                 "zoneNumber": {
                   "title": "Zone",
                   "type": "string",
-                  "oneOf": [
-                    {
+                  "oneOf": [{
                       "title": "V1/V2 & Pro: 1",
                       "enum": ["1"]
                     },
@@ -116,7 +160,7 @@
                       "enum": ["6"]
                     },
                     {
-                      "title": "V1/V2: Out or Alarm",
+                      "title": "V1/V2 Only: Out or Alarm",
                       "enum": ["out"]
                     },
                     {
@@ -160,8 +204,7 @@
                 "zoneType": {
                   "title": "Type",
                   "type": "string",
-                  "oneOf": [
-                    {
+                  "oneOf": [{
                       "title": "Sensor: Contact Sensor",
                       "enum": ["contact"]
                     },
@@ -190,8 +233,8 @@
                       "enum": ["smoke"]
                     },
                     {
-                      "title": "Switch: Alarm Arm/Disarm Switch",
-                      "enum": ["armingswitch"]
+                      "title": "Switch: Alarm Beeper Switch",
+                      "enum": ["beeper"]
                     },
                     {
                       "title": "Switch: Alarm Siren Switch",
@@ -374,28 +417,58 @@
                     ]
                   }
                 },
-                "invert": {
-                  "title": "Invert the Zone State (binary sensors only)",
-                  "type": "boolean",
-                  "default": false
-                },
-                "switchSettings": {
+                "binarySensorSettings": {
                   "type": "object",
+                  "condition": {
+                    "functionBody": "try { return ['contact','motion','glass','water','smoke'].includes(model.panels[arrayIndices[0]].zones[arrayIndices[1]].zoneType) } catch (e) { return false }"
+                  },
                   "expandable": true,
                   "expanded": false,
                   "properties": {
-                    "": {
-                      "description": "<span class='primary-text'>Define additional options (switches only).</span>",
-                      "type": "object"
+                    "invert": {
+                      "title": "Invert the sensor zone state",
+                      "type": "boolean"
                     },
+                    "audibleBeep": {
+                      "title": "This sensor should trigger the beeper when its state changes.",
+                      "description": "Uses the pulse settings for zone(s) configured as a beeper switch.",
+                      "type": "boolean"
+                    },
+                    "triggerableModes": {
+                      "title": "Triggerable Modes",
+                      "description": "Choose which modes this sensor will trigger the security system alarm.",
+                      "type": "array",
+                      "uniqueItems": true,
+                      "items": {
+                        "title": "Mode",
+                        "type": "string",
+                        "enum": [
+                          "0",
+                          "2",
+                          "1"
+                        ],
+                        "enumNames": [
+                          "Home",
+                          "Night",
+                          "Away"
+                        ]
+                      }
+                    }
+                  }
+                },
+                "switchSettings": {
+                  "type": "object",
+                  "condition": {
+                    "functionBody": "try { return ['beeper','siren','strobe','switch'].includes(model.panels[arrayIndices[0]].zones[arrayIndices[1]].zoneType) } catch(e){return false}"
+                  },
+                  "expandable": true,
+                  "expanded": false,
+                  "properties": {
                     "trigger": {
                       "title": "Output When On",
                       "description": "Trigger state when switch is considered 'on'.",
                       "type": "number",
-                      "required": true,
-                      "default": "1",
-                      "oneOf": [
-                        {
+                      "oneOf": [{
                           "title": "High",
                           "enum": ["1"]
                         },
@@ -427,6 +500,26 @@
                       "step": 1,
                       "minimum": -1,
                       "placeholder": "(E.g., 3)"
+                    },
+                    "triggerableModes": {
+                      "title": "Triggerable Modes (experimental)",
+                      "description": "Choose which modes this switch will trigger the security system alarm.",
+                      "type": "array",
+                      "uniqueItems": true,
+                      "items": {
+                        "title": "Mode",
+                        "type": "string",
+                        "enum": [
+                          "0",
+                          "2",
+                          "1"
+                        ],
+                        "enumNames": [
+                          "Home",
+                          "Night",
+                          "Away"
+                        ]
+                      }
                     }
                   }
                 }
