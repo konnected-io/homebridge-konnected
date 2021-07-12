@@ -13,7 +13,7 @@ import http from 'http';             // for creating a listening server
 import path from 'path';             // for getting filesystem meta
 import fs from 'fs';                 // for working with the filesystem
 import ip from 'ip';                 // for getting active IP on the system
-import { validate as uuidValidate, v4 as uuidv4 } from 'uuid'; // for handling UUIDs and creating auth tokens
+import { v4 as uuidv4 } from 'uuid'; // for handling UUIDs and creating auth tokens
 import { URL } from 'url';
 
 /**
@@ -296,8 +296,10 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
 
     // on discovery
     ssdpClient.on('response', (headers) => {
+
       // check for only Konnected devices
       if (headers.ST!.indexOf(ssdpUrnPartial) !== -1) {
+
         // store reported URL of panel that responded
         const ssdpHeaderLocation: string = headers.LOCATION || '';
         // extract UUID of panel from the USN string
@@ -376,15 +378,6 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
    * @param panelObject PanelObjectInterface  The status response object of the plugin from discovery.
    */
   updateHombridgeConfig(panelUUID: string, panelObject: PanelObjectInterface) {
-    // validate panel UUID
-    let validatedPanelUUID: string;
-    if (uuidValidate(panelUUID)) {
-      validatedPanelUUID = panelUUID;
-    } else {
-      this.log.error(`${panelUUID} is an invalid UUID structure for the panel at ${panelObject.ip}`);
-      return;
-    }
-
     // sanitize panel name
     let panelName = typeof panelObject.model !== 'undefined' ? panelObject.model : 'Konnected V1-V2';
     panelName = panelName.replace(/[^A-Za-z0-9\s/'":\-#.]/gi, ''); // sanitized
@@ -392,7 +385,7 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
     // create panel block with validated/sanitized panel name and UUID
     const newPanel = {
       name: panelName,
-      uuid: validatedPanelUUID,
+      uuid: panelUUID,
       ipAddress: panelObject.ip,
       port: panelObject.port,
     };
