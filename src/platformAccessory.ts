@@ -237,8 +237,10 @@ export class KonnectedPlatformAccessory {
           }
         }
 
+        const logtype = type !== runtimeCacheAccessory.type ? '-'+type : '';
+
         this.platform.log.debug(
-          `Get ${debugDefault}[${runtimeCacheAccessory.displayName}] (${runtimeCacheAccessory.serialNumber}) '${runtimeCacheAccessory.type}' characteristic value: ${value}`
+          `Get ${debugDefault}[${runtimeCacheAccessory.displayName}] (${runtimeCacheAccessory.serialNumber}) '${runtimeCacheAccessory.type}${logtype}' characteristic value: ${value}`
         );
       }
     });
