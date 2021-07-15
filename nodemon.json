@@ -6,9 +6,5 @@
   "ext": "ts",
   "ignore": [],
   "exec": "tsc && homebridge -I -D -Q",
-  "signal": "SIGTERM",
-  "outputCapture": "all",
-  "env": {
-    "NODE_OPTIONS": "--trace-warnings"
-  }
+  "signal": "SIGTERM"
 }
