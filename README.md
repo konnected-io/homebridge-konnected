@@ -14,6 +14,9 @@
 [![Apple HomeKit](https://flat.badgen.net/badge/apple/homekit/f89f1a?icon=apple)](https://www.apple.com/ios/home/)
 [![License: MIT](https://flat.badgen.net/badge/license/MIT/blue)](https://github.com/konnected-io/homebridge-konnected/blob/master/LICENSE)
 
+| <center>Homebridge users get 15% off at [konnected.io](https://konnected.io/?utm_campaign=homebridge) through 12/31/2021.<br>Use code HOMEBRIDGE2021 at checkout!</center> |
+| --- |
+
 # Supported Features
 
   * Sensors
