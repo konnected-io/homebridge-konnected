@@ -541,8 +541,6 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
 
     // if there are panels in the plugin config
     if (typeof this.config.panels !== 'undefined') {
-      // storage variable for the array of zones
-      const zoneObjectsArray: RuntimeCacheInterface[] = [];
 
       // loop through the available panels
       this.config.panels.forEach((configPanel) => {
@@ -698,7 +696,6 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
               });
 
               if (configPanelZone.enabled === true) {
-                zoneObjectsArray.push(zoneObject);
                 this.accessoriesRuntimeCache.push(zoneObject);
 
                 // match this zone's UUID to the UUID of an accessory stored in the global accessories cache
@@ -715,7 +712,7 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
           }); // end forEach loop (zones)
 
           // Now attempt to register the zones as accessories in Homebridge and HomeKit
-          this.registerAccessories(panelShortUUID, zoneObjectsArray, retainedAccessories);
+          this.registerAccessories(panelShortUUID, this.accessoriesRuntimeCache, retainedAccessories);
         } else if (configPanel.uuid === panelUUID && typeof configPanel.zones === 'undefined') {
           this.registerAccessories(panelShortUUID, [], []);
         }
