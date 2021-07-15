@@ -57,6 +57,7 @@ interface Zone {
  * Common object structure for the zone runtime cache.
  */
 export interface RuntimeCacheInterface {
+  // the following are referenced from config
   UUID: string;
   displayName: string;
   enabled: boolean;
@@ -68,7 +69,8 @@ export interface RuntimeCacheInterface {
   audibleBeep?: boolean;
   trigger?: string;
   triggerableModes?: [];
+  // the following are actively updated
+  state?: boolean | number;
   humi?: number;
   temp?: number;
-  state?: number | boolean;
 }
