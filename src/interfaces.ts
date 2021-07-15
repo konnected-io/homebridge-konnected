@@ -66,7 +66,7 @@ export interface RuntimeCacheInterface {
   panel: PanelObjectInterface;
   invert?: boolean;
   audibleBeep?: boolean;
-  trigger?: number | boolean;
+  trigger?: string;
   triggerableModes?: [];
   humi?: number;
   temp?: number;

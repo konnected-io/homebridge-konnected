@@ -193,7 +193,7 @@ For those without Config UI X, or are running this on HOOBS < 4.0, please see th
         * "1" for away mode
         * "2" for night mode
     * **"switchSettings"**: *(optional)* Switch-only object of settings when actuating the switch:
-      * **"trigger"**: *(required, default: High)* Trigger state when switch is considered 'on'. (Values: 0 or 1 meaning Low or High).
+      * **"trigger"**: *(optional)* Force the state of a switch when it is triggered to 'ON'. (Values: "high" or "low", unselected default is "high").
       * **"pulseDuration"**: *(optional)* How long the pulse is maintained in the on state for (in milliseconds).
       * **"pulsePause"**: *(conditional - required if pulseRepeat exists)* Pause between pulses (in milliseconds).
       * **"pulseRepeat"**: *(conditional - required if pulsePause exists)* Times to repeat pulse sequence (infinite = -1)

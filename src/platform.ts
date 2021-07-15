@@ -177,10 +177,29 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
             responsePayload.zone = requestPanelZone;
           }
 
+          // check the trigger state of switches based on their last runtime state in Homebridge
           this.accessoriesRuntimeCache.find((runtimeCacheAccessory) => {
             if (runtimeCacheAccessory.serialNumber === req.params.id + '-' + requestPanelZone) {
               responsePayload.state =
                 typeof runtimeCacheAccessory.state !== 'undefined' ? Number(runtimeCacheAccessory.state) : 0;
+              if (['beeper', 'siren', 'strobe', 'switch'].includes(runtimeCacheAccessory.type)) {
+
+                if (runtimeCacheAccessory.trigger === 'low' && runtimeCacheAccessory.state === false) {
+                  responsePayload.state = 1; // set to normally high (1), waiting to be triggered low (0)
+                } else if (runtimeCacheAccessory.trigger === 'low' && (runtimeCacheAccessory.state === true || runtimeCacheAccessory.state === undefined)) {
+                  responsePayload.state = 0; // set to triggered low (0), waiting to be normally high (1)
+                } else if ((runtimeCacheAccessory.trigger === 'high' || runtimeCacheAccessory.trigger === undefined) && (runtimeCacheAccessory.state === false || runtimeCacheAccessory.state === undefined)) {
+                  responsePayload.state = 0; // set to normally low (0), waiting to be triggered high (1)
+                } else if ((runtimeCacheAccessory.trigger === 'high' || runtimeCacheAccessory.trigger === undefined) && runtimeCacheAccessory.state === true) {
+                  responsePayload.state = 1; // set to triggered high (1), waiting to be normally low (0)
+                }
+                
+              } else {
+
+                responsePayload.state =
+                  typeof runtimeCacheAccessory.state !== 'undefined' ? Number(runtimeCacheAccessory.state) : 0;
+
+              }
             }
           });
           this.log.debug(
@@ -551,9 +570,8 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
             }
             let panelZone: PanelZone = {};
 
-            // assign the trigger value on startup
-            const zoneTrigger =
-              configPanelZone.switchSettings?.trigger !== undefined ? configPanelZone.switchSettings.trigger : 1;
+            // assign the trigger value on startup:
+            const zoneTrigger = configPanelZone.switchSettings?.trigger === 'low' ? 0 : 1;
 
             if ('model' in panelObject) {
               // this is a Pro panel
@@ -567,7 +585,7 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
                 // validate if zone can be an actuator/switch
                 if (ZONES[configPanelZone.zoneNumber].includes(configPanelZone.zoneType)) {
                   panelZone.zone = configPanelZone.zoneNumber;
-                  panelZone.trigger = zoneTrigger === 0 ? 0 : 1;
+                  panelZone.trigger = zoneTrigger;
                 } else {
                   this.log.warn(
                     `Invalid Zone: Konnected Pro Alarm Panels cannot have zone ${configPanelZone.zoneNumber} as an actuator/switch. Try zones 1-8, 'alarm1', 'out1', or 'alarm2_out2'.`
@@ -587,7 +605,7 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
                   // validate if zone can be an actuator/switch
                   if (configPanelZone.zoneNumber < 6 || configPanelZone.zoneNumber === 'out') {
                     panelZone.pin = ZONES_TO_PINS[configPanelZone.zoneNumber];
-                    panelZone.trigger = zoneTrigger === 0 ? 0 : 1;
+                    panelZone.trigger = zoneTrigger;
                   } else {
                     this.log.warn(
                       `Invalid Zone: Konnected V1-V2 Alarm Panels cannot have zone ${configPanelZone.zoneNumber} as an actuator/switch. Try zones 1-5 or 'out'.`
@@ -660,6 +678,24 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
               } else if (configPanelZone.switchSettings?.triggerableModes) {
                 zoneObject.triggerableModes = configPanelZone.switchSettings.triggerableModes;
               }
+
+              // store previous state from existing Homebridge's platform accessory cache state
+              this.accessories.forEach((accessory) => {
+                if (accessory.UUID === zoneUUID) {
+                  // boolean or number state
+                  if (typeof accessory.context.device.state !== 'undefined') {
+                    zoneObject.state = accessory.context.device.state;
+                  }
+                  // humidity state
+                  if (typeof accessory.context.device.humi !== 'undefined') {
+                    zoneObject.humi = accessory.context.device.humi;
+                  }
+                  // temperature state
+                  if (typeof accessory.context.device.temp !== 'undefined') {
+                    zoneObject.humi = accessory.context.device.temp;
+                  }
+                }
+              });
 
               if (configPanelZone.enabled === true) {
                 zoneObjectsArray.push(zoneObject);
@@ -944,31 +980,20 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
 
       const securitySystemAccessory = this.accessories.find((accessory) => accessory.UUID === this.securitySystemUUID);
 
-      // check if accessory should trigger the alarm (based on what set modes it should)
+      // check what modes the accessory has set to trigger the alarm
       if (accessory.triggerableModes?.includes(String(securitySystemAccessory?.context.device.state) as never)) {
         // accessory should trigger security system
-        // find the beeper accessories and actuate them them for the audible delay sound
+
+        // find beepers and actuate audible delay sound
         this.accessoriesRuntimeCache.forEach((beeperAccessory) => {
           if (beeperAccessory.type === 'beeper') {
-            const trigger = beeperAccessory.trigger ? beeperAccessory.trigger : true;
-
             let beeperSettings;
             if (this.config.advanced?.entryDelaySettings?.pulseDuration) {
               beeperSettings = this.config.advanced?.entryDelaySettings;
             } else {
               beeperSettings = null;
             }
-
-            const securitySystemAccessory = this.accessories.find(
-              (ssAccessory) => ssAccessory.UUID === this.securitySystemUUID
-            );
-            if (accessory.triggerableModes?.includes(String(securitySystemAccessory?.context.device.state) as never)) {
-              this.konnectedPlatformAccessories[beeperAccessory.UUID].service.updateCharacteristic(
-                this.Characteristic.On,
-                true
-              );
-              this.actuateAccessory(beeperAccessory.UUID, trigger, beeperSettings);
-            }
+            this.actuateAccessory(beeperAccessory.UUID, true, beeperSettings);
           }
         });
         // wait the entry delay time before triggering the security system (and sounding the siren and reporting to noomlight)
@@ -1018,9 +1043,22 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
           // loop through the plugin configuration to get the zone's switch advanced settings
           panelObject.zones.forEach((zoneObject) => {
             if (zoneObject.zoneNumber === existingAccessory.context.device.serialNumber.split('-')[1]) {
+
+              const runtimeCacheAccessory: RuntimeCacheInterface = this.accessoriesRuntimeCache.find((runtimeCacheAccessory) => runtimeCacheAccessory.UUID === zoneUUID) as never;
+
+              let actuatorState = 0;
+              if (runtimeCacheAccessory.trigger === 'low' && value === false) {
+                actuatorState = 1; // set to normally high (1), waiting to be triggered low (0)
+              } else if (runtimeCacheAccessory.trigger === 'low' && value === true) {
+                actuatorState = 0; // set to triggered low (0), waiting to be normally high (1)
+              } else if ((runtimeCacheAccessory.trigger === 'high' || runtimeCacheAccessory.trigger === undefined) && value === false) {
+                actuatorState = 0; // set to normally low (0), waiting to be triggered high (1)
+              } else if ((runtimeCacheAccessory.trigger === 'high' || runtimeCacheAccessory.trigger === undefined) && value === true) {
+                actuatorState = 1; // set to triggered high (1), waiting to be normally low (0)
+              }
               const actuatorPayload: Record<string, unknown> = {
                 // explicitly convert boolean to integer for the panel payload
-                state: Number(value),
+                state: actuatorState,
               };
 
               // Pro zone vs V1-V2 pin payload property assignment
