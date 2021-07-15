@@ -42,7 +42,10 @@ export class KonnectedPlatformAccessory {
         this.service.getCharacteristic(this.platform.Characteristic.SecuritySystemCurrentState)
           .onGet(this.getSecuritySystemCurrentState.bind(this));
         this.service.getCharacteristic(this.platform.Characteristic.SecuritySystemTargetState)
-          .onGet(this.getSecuritySystemTargetState.bind(this))
+          /**
+           * @removed 'Security System Target State': characteristic was supplied illegal value: number 4 exceeded maximum of 3. See https://git.io/JtMGR for more info.
+           * .onGet(this.getSecuritySystemTargetState.bind(this))
+           */
           .onSet(this.setSecuritySystemTargetState.bind(this));
         break;
 
@@ -99,148 +102,142 @@ export class KonnectedPlatformAccessory {
    * Handle the "GET" & "SET" requests from HomeKit
    */
   async getSecuritySystemCurrentState(): Promise<CharacteristicValue> {
-    const state = this.getSecuritySystemState(this.accessory.context.device.UUID, 'current');
+    const state = this.getSecuritySystemState('current');
     return state as number;
   }
 
   async getSecuritySystemTargetState(): Promise<CharacteristicValue> {
-    const state = this.getSecuritySystemState(this.accessory.context.device.UUID, 'target');
+    const state = this.getSecuritySystemState('target');
     return state as number;
   }
 
   async setSecuritySystemTargetState(value: CharacteristicValue) {
-    this.setSecuritySystemState(this.accessory.context.device.UUID, 'target', value as number);
+    this.setSecuritySystemState('target', value as number);
   }
 
   async getContactSensorState(): Promise<CharacteristicValue> {
-    const state = this.getAccessoryState(this.accessory.context.device.UUID, 'contact');
+    const state = this.getAccessoryState('contact');
     return state as number;
   }
 
   async getMotionSensorState(): Promise<CharacteristicValue> {
-    const state = this.getAccessoryState(this.accessory.context.device.UUID, 'motion');
+    const state = this.getAccessoryState('motion');
     return state as boolean;
   }
 
   async getLeakSensorState(): Promise<CharacteristicValue> {
-    const state = this.getAccessoryState(this.accessory.context.device.UUID, 'water');
+    const state = this.getAccessoryState('water');
     return state as number;
   }
 
   async getSmokeSensorState(): Promise<CharacteristicValue> {
-    const state = this.getAccessoryState(this.accessory.context.device.UUID, 'smoke');
+    const state = this.getAccessoryState('smoke');
     return state as number;
   }
 
   async getTemperatureSensorValue(): Promise<CharacteristicValue> {
-    const temp = this.getAccessoryState(this.accessory.context.device.UUID, 'temp');
+    const temp = this.getAccessoryState('temp');
     return temp as number;
   }
 
   async getHumiditySensorValue(): Promise<CharacteristicValue> {
-    const humi = this.getAccessoryState(this.accessory.context.device.UUID, 'humi');
+    const humi = this.getAccessoryState('humi');
     return humi as number;
   }
 
   async getSwitchState(): Promise<CharacteristicValue> {
-    const state = this.getAccessoryState(this.accessory.context.device.UUID, 'switch');
+    const state = this.getAccessoryState('switch');
     return state as boolean;
   }
 
   async setSwitchState(value: CharacteristicValue) {
-    this.setAccessoryState(this.accessory.context.device.UUID, 'switch', value as boolean);
+    this.setAccessoryState('switch', value as boolean);
   }
 
   // get and set the security system states
-  getSecuritySystemState(ssUUID: string, characteristic: string) {
+  getSecuritySystemState(characteristic: string) {
     let value = 0; // default to Home (in case of catastrophic reset when not home, this preserves the home's security)
-    this.platform.accessories.forEach((accessory) => {
-      if (accessory.UUID === ssUUID) {
-        // set defaults
-        if (typeof accessory.context.device.state === 'undefined') {
-          accessory.context.device.state = value;
-          this.platform.log.debug(
-            `Assigning default state '${value}' to [${this.accessory.context.device.displayName}] (${this.accessory.context.device.serialNumber}) '${this.accessoryServiceType}' characteristic value. Awaiting zone's first state change...`
-          );
-        } else {
-          value = accessory.context.device.state;
-        }
-        this.platform.log.debug(
-          `Get [${accessory.displayName}] (${accessory.context.device.serialNumber}) '${accessory.context.device.type}' ${characteristic} characteristic value: ${accessory.context.device.state}`
-        );
-      }
-    });
+    // set defaults
+    if (typeof this.accessory.context.device.state === 'undefined') {
+      this.accessory.context.device.state = value;
+      this.platform.log.debug(
+        `Assigning default state '${value}' to [${this.accessory.context.device.displayName}] (${this.accessory.context.device.serialNumber}) '${this.accessoryServiceType}' characteristic value. Awaiting zone's first state change...`
+      );
+    } else {
+      value = this.accessory.context.device.state;
+    }
+    this.platform.log.debug(
+      `Get [${this.accessory.displayName}] (${this.accessory.context.device.serialNumber}) '${this.accessory.context.device.type}' ${characteristic} characteristic value: ${this.accessory.context.device.state}`
+    );
     return value;
   }
 
-  setSecuritySystemState(ssUUID: string, characteristic: string, value: number) {
-    this.platform.accessories.forEach((accessory) => {
-      if (accessory.UUID === ssUUID) {
-        this.accessory.context.device.state = value;
-        this.platform.log.debug(
-          `Set [${this.accessory.context.device.displayName}] (${this.accessory.context.device.serialNumber}) '${this.accessory.context.device.type}' ${characteristic} characteristic value: ${value}`
-        );
-      }
-    });
+  setSecuritySystemState(characteristic: string, value: number) {
+    this.accessory.context.device.state = value;
+    this.platform.log.debug(
+      `Set [${this.accessory.context.device.displayName}] (${this.accessory.context.device.serialNumber}) '${this.accessory.context.device.type}' ${characteristic} characteristic value: ${value}`
+    );
     this.platform.controlSecuritySystem(value);
     return value;
   }
 
   // get sensor or actuator state
-  getAccessoryState(accessoryUUID: string, type: string) {
+  getAccessoryState(type: string) {
     let value: number | boolean | undefined;
 
     this.platform.accessoriesRuntimeCache.forEach((runtimeCacheAccessory) => {
-      if (runtimeCacheAccessory.UUID === accessoryUUID) {
-        let debugDefault = '';
+      if (runtimeCacheAccessory.UUID === this.accessory.context.device.UUID) {
+        let logLabelDefault = '';
+        const logLabelType = type !== runtimeCacheAccessory.type ? '-' + type : '';
 
-        // accessory with basic state: set default or get property values
-        if (typeof runtimeCacheAccessory.state === 'undefined') {
-          // handle boolean vs number properties
-          if (['motion', 'switch'].includes(type)) {
-            // these are boolean in HomeKit
-            runtimeCacheAccessory.state = value = false;
-            debugDefault = 'default ';
-          } else if (['contact', 'water', 'smoke'].includes(type)) {
-            // these are numeric in HomeKit
-            runtimeCacheAccessory.state = value = 0;
-          }
-        } else {
-          if (['motion', 'switch'].includes(type)) {
-            value = Boolean(runtimeCacheAccessory.state);
-            debugDefault = 'default ';
-          } else if (['contact', 'water', 'smoke'].includes(type)) {
-            value = runtimeCacheAccessory.state;
+        // boolean-binary accessory - these are boolean in HomeKit
+        if ('motion' === type || 'switch' === type) {
+          if (typeof runtimeCacheAccessory.state !== 'boolean') {
+            runtimeCacheAccessory.state = this.accessory.context.device.state = value = false;
+            logLabelDefault = 'default ';
+          } else {
+            value = this.accessory.context.device.state = Boolean(runtimeCacheAccessory.state);
           }
         }
 
-        // humidity accessory: set default or get property values
-        if (type === 'humi') {
-          if (typeof runtimeCacheAccessory.humi === 'undefined') {
-            runtimeCacheAccessory.humi = value = 0;
-            debugDefault = 'default ';
+        // numeric-binary accessory - these are numeric in HomeKit
+        if ('contact' === type || 'water' === type || 'smoke' === type) {
+          if (typeof runtimeCacheAccessory.state !== 'number') {
+            runtimeCacheAccessory.state = this.accessory.context.device.state = value = 0;
+            logLabelDefault = 'default ';
           } else {
-            value = runtimeCacheAccessory.humi;
+            value = this.accessory.context.device.state = Number(runtimeCacheAccessory.state);
+          }
+        }
+
+        // humidity accessory (also re-gets temperature)
+        if ('humi' === type) {
+          if (typeof runtimeCacheAccessory.humi !== 'number') {
+            runtimeCacheAccessory.humi = this.accessory.context.device.humi = value = 0;
+            logLabelDefault = 'default ';
+          } else {
+            value = this.accessory.context.device.humi = Number(runtimeCacheAccessory.humi);
           }
           // now get and update the temperature accessory
-          const temperature = this.getAccessoryState(accessoryUUID, 'temp');
-          this.temperatureSensorService.updateCharacteristic(this.platform.Characteristic.CurrentTemperature, temperature as number);
+          const temperature = this.getAccessoryState('temp');
+          this.temperatureSensorService.updateCharacteristic(
+            this.platform.Characteristic.CurrentTemperature,
+            Number(temperature)
+          );
         }
 
-        // temperature accessory: set default or get property values
-        if (type === 'temp') {
-          if (typeof runtimeCacheAccessory.temp === 'undefined') {
-            runtimeCacheAccessory.temp = value = 0;
-            debugDefault = 'default ';
+        // temperature accessory
+        if ('temp' === type) {
+          if (typeof runtimeCacheAccessory.temp !== 'number') {
+            runtimeCacheAccessory.temp = this.accessory.context.device.temp = value = 0;
+            logLabelDefault = 'default ';
           } else {
-            value = runtimeCacheAccessory.temp;
+            value = this.accessory.context.device.temp = Number(runtimeCacheAccessory.temp);
           }
         }
 
-        const logtype = type !== runtimeCacheAccessory.type ? '-'+type : '';
-
         this.platform.log.debug(
-          `Get ${debugDefault}[${runtimeCacheAccessory.displayName}] (${runtimeCacheAccessory.serialNumber}) '${runtimeCacheAccessory.type}${logtype}' characteristic value: ${value}`
+          `Get ${logLabelDefault}[${runtimeCacheAccessory.displayName}] (${runtimeCacheAccessory.serialNumber}) '${runtimeCacheAccessory.type}${logLabelType}' characteristic value: ${value}`
         );
       }
     });
@@ -248,8 +245,16 @@ export class KonnectedPlatformAccessory {
   }
 
   // for actuators
-  setAccessoryState(accessoryUUID: string, type: string, value: boolean | number) {
-    this.platform.actuateAccessory(accessoryUUID, value, null);
+  setAccessoryState(type: string, value: boolean) {
+    this.platform.accessoriesRuntimeCache.forEach((runtimeCacheAccessory) => {
+      if (runtimeCacheAccessory.UUID === this.accessory.context.device.UUID) {
+        runtimeCacheAccessory.state = this.accessory.context.device.state = value;
+        this.platform.actuateAccessory(this.accessory.context.device.UUID, value, null);
+        this.platform.log.debug(
+          `Set [${runtimeCacheAccessory.displayName}] (${runtimeCacheAccessory.serialNumber}) '${runtimeCacheAccessory.type}' characteristic value: ${value}`
+        );
+      }
+    });
     return value;
   }
 }
