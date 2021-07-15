@@ -139,12 +139,13 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
       // validate provided bearer auth token
       if (this.listenerAuth.includes(req.headers.authorization.split('Bearer ').pop())) {
         if (['POST', 'PUT'].includes(req.method)) {
-          // panel request to update zone
+          // panel request to SET the state of the switch in Homebridge/HomeKit
+          // send response with success to the panel
           res.status(200).json({ success: true });
           this.updateSensorAccessoryState(req);
         } else if ('GET' === req.method) {
-          // panel request to get the state of a Homebridge/HomeKit switch
-          // then reply back to the panel to set the "source of truth" actuator state
+          // panel request to GET the state of the switch in Homebridge/HomeKit
+          // send response with payload of states to the panel
 
           // create type interface for responsePayload variable
           interface ResponsePayload {
@@ -162,6 +163,7 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
           // default to zone for Pro panel, but may be replaced if V1-V1 panel
           let requestPanelZone = req.query.zone;
 
+          // pins or zones assignment
           if (req.query.pin) {
             // V1-V2 panel
             // change requestPanelZone variable to the zone equivalent of a pin on V1-V2 panels
@@ -179,8 +181,6 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
           // check the trigger state of switches based on their last runtime state in Homebridge
           this.accessoriesRuntimeCache.find((runtimeCacheAccessory) => {
             if (runtimeCacheAccessory.serialNumber === req.params.id + '-' + requestPanelZone) {
-              responsePayload.state =
-                typeof runtimeCacheAccessory.state !== 'undefined' ? Number(runtimeCacheAccessory.state) : 0;
               if (['beeper', 'siren', 'strobe', 'switch'].includes(runtimeCacheAccessory.type)) {
 
                 if (runtimeCacheAccessory.trigger === 'low' && runtimeCacheAccessory.state === false) {
@@ -204,6 +204,7 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
           this.log.debug(
             `Panel (${req.params.id}) requested zone '${requestPanelZone}' initial state, sending value of ${responsePayload.state}`
           );
+          // return response with payload of states
           res.status(200).json(responsePayload);
         }
       } else {
@@ -524,7 +525,8 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
   }
 
   /**
-   * Build the payload for assigning zone types on the panel.
+   * Build the payload of zones for provisioning on a panel.
+   * Store the configuration of zones in the accessoriesRuntimeCache.
    *
    * @param panelUUID string  The unique identifier for the panel itself.
    * @param panelObject PanelObjectInterface  The status response object of the plugin from discovery.
@@ -881,7 +883,7 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
             }
 
             // now check if the accessory should do something: e.g., trigger the alarm, produce an audible beep, etc.
-            this.processAccessoryActions(defaultStateValue, resultStateValue, runtimeCacheAccessory);
+            this.processSensorAccessoryActions(runtimeCacheAccessory, defaultStateValue, resultStateValue);
           }
 
           switch (TYPES_TO_ACCESSORIES[runtimeCacheAccessory.type][0]) {
@@ -949,11 +951,13 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
    * @param resultStateValue boolean | number  The state of the accessory as updated.
    * @param accessory RuntimeCacheInterface  The accessory that we are basing our actions by.
    */
-  processAccessoryActions(
+  processSensorAccessoryActions(
+    accessory: RuntimeCacheInterface,
     defaultStateValue: boolean | number,
-    resultStateValue: boolean | number,
-    accessory: RuntimeCacheInterface
+    resultStateValue: boolean | number
   ) {
+
+    
     // if the default state of the accessory is not the same as the updated state, we should process it
     if (defaultStateValue !== resultStateValue) {
       this.log.debug(
@@ -978,24 +982,27 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
             this.actuateAccessory(beeperAccessory.UUID, true, beeperSettings);
           }
         });
-        // wait the entry delay time before triggering the security system (and sounding the siren and reporting to noomlight)
+
+        // wait the entry delay time and trigger the security system
         this.entryTriggerDelayTimerHandle = setTimeout(() => {
           this.log.debug(
-            `Set [${securitySystemAccessory?.context.device.displayName}] (${securitySystemAccessory?.context.device.serialNumber}) '${securitySystemAccessory?.context.device.type}' Characteristic: 4 (triggered!)`
+            `Set [${securitySystemAccessory?.displayName}] (${securitySystemAccessory?.context.device.serialNumber}) '${securitySystemAccessory?.context.device.type}' characteristic: 4 (triggered!)`
           );
-          this.triggerSecuritySystem();
+          this.controlSecuritySystem(4);
         }, this.entryTriggerDelay);
+
       } else {
         // accessory is just sensing change
+
         // restrict it to contact or motion sensor accessories that have the audible notification setting configured
         if (['contact', 'motion'].includes(accessory.type) && accessory.audibleBeep) {
           this.accessoriesRuntimeCache.forEach((beeperAccessory) => {
             if (beeperAccessory.type === 'beeper') {
-              const trigger = beeperAccessory.trigger ? beeperAccessory.trigger : true;
-              this.actuateAccessory(beeperAccessory.UUID, trigger, null);
+              this.actuateAccessory(beeperAccessory.UUID, true, null);
             }
           });
         }
+
       }
     }
   }
@@ -1004,9 +1011,11 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
    * Actuate a zone on a panel based on the switch's state.
    *
    * @param zoneUUID string  HAP UUID for the switch zone accessory.
-   * @param value boolean | number  The value to change the state of the zone accessory to.
+   * @param value boolean  The value of the state as represented in HomeKit (may be adjusted by config trigger settings).
+   * @param inboundSwitchSettings object  Settings object that can override the default accessory settings.
    */
   actuateAccessory(zoneUUID: string, value: boolean | number, inboundSwitchSettings: Record<string, unknown> | null) {
+
     // retrieve the matching accessory
     const existingAccessory = this.accessories.find((accessory) => accessory.UUID === zoneUUID);
 
@@ -1022,7 +1031,7 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
             existingAccessory.context.device.panel.port +
             '/';
 
-          // loop through the plugin configuration to get the zone's switch advanced settings
+          // loop through the plugin configuration to get the zone switch settings
           panelObject.zones.forEach((zoneObject) => {
             if (zoneObject.zoneNumber === existingAccessory.context.device.serialNumber.split('-')[1]) {
 
@@ -1068,7 +1077,7 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
               }
 
               // calculate the duration for a momentary switch to complete its triggered task (eg. sequence of pulses)
-              // this calculation occurs when there are switch settings and the switch is turning 'on'
+              // this calculation occurs when there are switch settings and the switch is turning 'on' (true)
               // otherwise we simply need send a default payload of 'off'
               let actuatorDuration;
               const switchSettings = inboundSwitchSettings ? inboundSwitchSettings : zoneObject.switchSettings;
