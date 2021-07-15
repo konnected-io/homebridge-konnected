@@ -1019,6 +1019,8 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
     // retrieve the matching accessory
     const existingAccessory = this.accessories.find((accessory) => accessory.UUID === zoneUUID);
 
+    this.konnectedPlatformAccessories[zoneUUID].service.updateCharacteristic(this.Characteristic.On, value);
+
     if (existingAccessory) {
       // loop through the plugin configuration to get the correct panel for the zone
       this.config.panels.forEach((panelObject) => {
