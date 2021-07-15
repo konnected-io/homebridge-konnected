@@ -32,31 +32,31 @@
           "placeholder": "(default: randomized by availability)"
         },
         "discoveryTimeout": {
-          "title": "Discovery Timeout (s) (optional)",
+          "title": "Discovery Timeout (seconds) (optional)",
           "description": "Provide a length of time in seconds (between 1 and 300) to allow this plugin to discover all of the Konnected Alarm Panels on the network.",
           "type": "number",
           "step": 1,
           "minimum": 1,
           "maximum": 30,
-          "placeholder": "(default: 5 seconds)"
+          "placeholder": "(default: 5)"
         },
         "entryDelaySettings": {
           "type": "object",
           "properties": {
             "": {
-              "description": "Configurable settings for when the security system has been violated while armed to \"away\" mode.<br>By default the beeper will have a constant sound, but if you use the example values, it will produce a long tone once every second so you know how much time you have to disarm the security system.",
+              "description": "Configurable settings for when the security system has been violated while armed to \"Away\" mode.<br>By default the beeper will have a constant sound, but if you use the example values, it will produce a long tone once every second so you know how much time you have to disarm the security system.",
               "type": "object"
             },
             "delay": {
-              "title": "Delay (optional)",
+              "title": "Delay (seconds) (optional)",
               "description": "The entry delay before the security system is triggered and the siren zone is triggered.",
               "type": "number",
               "step": 1,
               "minimum": 0,
-              "placeholder": "(default: 30 seconds)"
+              "placeholder": "(default: 30)"
             },
             "pulseDuration": {
-              "title": "Beeper Pulse Duration (ms) (optional)",
+              "title": "Beeper Pulse Duration (milliseconds) (optional)",
               "description": "How long the pulse is maintained in the on state for.",
               "type": "number",
               "step": 1,
@@ -64,7 +64,7 @@
               "placeholder": "(E.g., 975)"
             },
             "pulsePause": {
-              "title": "Beeper Pause Between Pulses (ms) (optional, but required if Times to Repeat exists)",
+              "title": "Beeper Pause Between Pulses (milliseconds) (optional, but required if Times to Repeat exists)",
               "type": "number",
               "step": 1,
               "minimum": 1,
@@ -464,7 +464,7 @@
                   "expanded": false,
                   "properties": {
                     "trigger": {
-                      "title": "Force Trigger State (optional, unselected default is High)",
+                      "title": "Force Trigger State (optional)",
                       "type": "string",
                       "enum": [
                         "high",
@@ -475,7 +475,7 @@
                         "titleMap": [
                           {
                             "value": "high",
-                            "name": "High"
+                            "name": "High (unselected default)"
                           },
                           {
                             "value": "low",
@@ -485,7 +485,7 @@
                       }
                     },
                     "pulseDuration": {
-                      "title": "Pulse Duration (ms) (optional)",
+                      "title": "Pulse Duration (milliseconds) (optional)",
                       "description": "How long the pulse is maintained in the on state for.",
                       "type": "number",
                       "step": 1,
@@ -493,7 +493,7 @@
                       "placeholder": "(E.g., 100)"
                     },
                     "pulsePause": {
-                      "title": "Pause Between Pulses (ms) (optional, but required if Times to Repeat exists)",
+                      "title": "Pause Between Pulses (milliseconds) (optional, but required if Times to Repeat exists)",
                       "type": "number",
                       "step": 1,
                       "minimum": 1,
