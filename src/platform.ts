@@ -1157,59 +1157,50 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
   }
 
   /**
-   * Arm/Disarm the security system accessory.
+   * Arm/Disarm/Trigger the security system accessory.
    *
    * @param value number  The value to change the state of the Security System accessory to.
    */
   controlSecuritySystem(value: number) {
+    // control security system based on value
     this.konnectedPlatformAccessories[this.securitySystemUUID].service.updateCharacteristic(
       this.Characteristic.SecuritySystemCurrentState,
       value
     );
-    // turns off the trigger of beepers and sirens
+    // store in platform accessories cache
+    this.accessories.find((accessory) => {
+      if (accessory.UUID === this.securitySystemUUID) {
+        accessory.context.device.state = value;
+      }
+    });
+
+
+    // if the security system is turned off, turn beepers, sirens and strobes off
     if (value === 3) {
       clearTimeout(this.entryTriggerDelayTimerHandle);
       this.accessoriesRuntimeCache.forEach((runtimeCacheAccessory) => {
-        if (['beeper', 'siren', 'strobe'].includes(runtimeCacheAccessory.type)) {
-          const trigger = runtimeCacheAccessory.trigger === false ? true : false;
-          this.konnectedPlatformAccessories[runtimeCacheAccessory.UUID].service.updateCharacteristic(
-            this.Characteristic.On,
-            trigger
-          );
-          this.actuateAccessory(runtimeCacheAccessory.UUID, trigger, null);
+        if (['siren', 'strobe'].includes(runtimeCacheAccessory.type)) {
+          this.actuateAccessory(runtimeCacheAccessory.UUID, false, null);
         }
       });
     }
-  }
 
-  /**
-   * Triggers the security system alarm based on the accessory's security system mode settings.
-   * We will likely need to make a call to a NoonLight method here at some point.
-   *
-   * @link https://www.npmjs.com/package/@noonlight/noonlight-sdk
-   */
-  triggerSecuritySystem() {
-    this.konnectedPlatformAccessories[this.securitySystemUUID].service.updateCharacteristic(
-      this.Characteristic.SecuritySystemCurrentState,
-      4
-    );
-    this.accessoriesRuntimeCache.forEach((alarmAccessory) => {
-      if (['siren', 'strobe'].includes(alarmAccessory.type)) {
-        const trigger = alarmAccessory.trigger ? alarmAccessory.trigger : true;
-        this.konnectedPlatformAccessories[alarmAccessory.UUID].service.updateCharacteristic(
-          this.Characteristic.On,
-          true
-        );
-        this.actuateAccessory(alarmAccessory.UUID, trigger, null);
-      }
-      // corrects bug with the konnected board where it turns off continuous pulsing zones when other zones are actuated
-      // for later removal
-      if ('beeper' === alarmAccessory.type) {
-        this.konnectedPlatformAccessories[alarmAccessory.UUID].service.updateCharacteristic(
-          this.Characteristic.On,
-          false
-        );
-      }
-    });
+    // if the security system is triggered
+    if (value === 4) {
+      this.accessoriesRuntimeCache.forEach((runtimeCacheAccessory) => {
+        // turns off the beeper
+        if ('beeper' === runtimeCacheAccessory.type) {
+          this.actuateAccessory(runtimeCacheAccessory.UUID, false, null);
+        }
+        // turns on the siren and strobe lights
+        if (['siren', 'strobe'].includes(runtimeCacheAccessory.type)) {
+          this.actuateAccessory(runtimeCacheAccessory.UUID, true, null);
+        }
+      });
+
+      /** for future
+       * @link https://www.npmjs.com/package/@noonlight/noonlight-sdk
+       */
+    }
   }
 }
