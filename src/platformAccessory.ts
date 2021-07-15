@@ -50,45 +50,58 @@ export class KonnectedPlatformAccessory {
         break;
 
       case 'ContactSensor':
-        this.service.getCharacteristic(this.platform.Characteristic.ContactSensorState)
+        this.service
+          .getCharacteristic(this.platform.Characteristic.ContactSensorState)
           .onGet(this.getContactSensorState.bind(this));
         break;
 
       case 'MotionSensor':
-        this.service.getCharacteristic(this.platform.Characteristic.MotionDetected)
+        this.service
+          .getCharacteristic(this.platform.Characteristic.MotionDetected)
           .onGet(this.getMotionSensorState.bind(this));
         break;
 
       case 'LeakSensor':
-        this.service.getCharacteristic(this.platform.Characteristic.LeakDetected)
+        this.service
+          .getCharacteristic(this.platform.Characteristic.LeakDetected)
           .onGet(this.getLeakSensorState.bind(this));
         break;
 
       case 'SmokeSensor':
-        this.service.getCharacteristic(this.platform.Characteristic.SmokeDetected)
+        this.service
+          .getCharacteristic(this.platform.Characteristic.SmokeDetected)
           .onGet(this.getSmokeSensorState.bind(this));
         break;
 
       case 'TemperatureSensor':
-        this.service.getCharacteristic(this.platform.Characteristic.CurrentTemperature)
+        this.service
+          .getCharacteristic(this.platform.Characteristic.CurrentTemperature)
           .onGet(this.getTemperatureSensorValue.bind(this));
         break;
 
-      case 'HumiditySensor': {
-        // this represents DHT sensors
-        this.service.getCharacteristic(this.platform.Characteristic.CurrentRelativeHumidity)
-          .onGet(this.getHumiditySensorValue.bind(this));
-        // the primary accessory is the humidity sensor and we need to add the secondary service/accessory as the temperature sensor
-        // this will unconditionally create a HAP warning on creation, but not after further restarts
-        this.temperatureSensorService = this.accessory.getService('Temperature Sensor') ||
-          this.accessory
-            .addService(this.platform.Service.TemperatureSensor, 'Temperature Sensor', accessory.context.device.serialNumber + '.1')
-            .setCharacteristic(this.platform.Characteristic.SerialNumber, accessory.context.device.serialNumber + '.1');
+      case 'HumiditySensor':
+        {
+          // this represents DHT sensors
+          this.service
+            .getCharacteristic(this.platform.Characteristic.CurrentRelativeHumidity)
+            .onGet(this.getHumiditySensorValue.bind(this));
+          // the primary accessory is the humidity sensor and we need to add the secondary service/accessory as the temperature sensor
+          // this will unconditionally create a HAP warning on creation, but not after further restarts
+          this.temperatureSensorService =
+            this.accessory.getService('Temperature Sensor') ||
+            this.accessory
+              .addService(
+                this.platform.Service.TemperatureSensor,
+                'Temperature Sensor',
+                accessory.context.device.serialNumber + '.1'
+              )
+              .setCharacteristic(this.platform.Characteristic.SerialNumber, accessory.context.device.serialNumber + '.1');
+        }
         break;
-      }
 
       case 'Switch':
-        this.service.getCharacteristic(this.platform.Characteristic.On)
+        this.service
+          .getCharacteristic(this.platform.Characteristic.On)
           .onGet(this.getSwitchState.bind(this))
           .onSet(this.setSwitchState.bind(this));
         break;
