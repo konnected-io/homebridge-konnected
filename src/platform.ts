@@ -1119,22 +1119,20 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
                     response.status === 200 &&
                     ['beeper', 'siren', 'strobe', 'switch'].includes(existingAccessory.context.device.type)
                   ) {
+                    // if momentary switch, reset the state after calculated duration
                     if (actuatorDuration > 0 && switchSettings.pulseRepeat !== Number(-1)) {
-                      // this is a momentary switch, reset the state after calculated duration
                       setTimeout(() => {
-                        // if state is on, turn off
-                        const restoreState = value === true ? false : true;
                         // update Homebridge/HomeKit displayed state
                         this.konnectedPlatformAccessories[zoneUUID].service.updateCharacteristic(
                           this.Characteristic.On,
-                          restoreState
+                          false
                         );
-                        // update the state cache for subsequent HomeKit get calls
+                        // update the state cache
                         this.accessoriesRuntimeCache.forEach((runtimeCacheAccessory) => {
                           if (runtimeCacheAccessory.UUID === zoneUUID) {
-                            runtimeCacheAccessory.state = restoreState;
+                            runtimeCacheAccessory.state = existingAccessory.context.device.state = false;
                             this.log.debug(
-                              `Set [${runtimeCacheAccessory.displayName}] (${runtimeCacheAccessory.serialNumber}) '${runtimeCacheAccessory.type}' characteristic value: ${restoreState}`
+                              `Set [${runtimeCacheAccessory.displayName}] (${runtimeCacheAccessory.serialNumber}) '${runtimeCacheAccessory.type}' characteristic value: false`
                             );
                           }
                         });
