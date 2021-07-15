@@ -141,7 +141,6 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
         if (['POST', 'PUT'].includes(req.method)) {
           // panel request to update zone
           res.status(200).json({ success: true });
-          // process the update of the state
           this.updateSensorAccessoryState(req);
         } else if ('GET' === req.method) {
           // panel request to get the state of a Homebridge/HomeKit switch
@@ -205,7 +204,6 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
           this.log.debug(
             `Panel (${req.params.id}) requested zone '${requestPanelZone}' initial state, sending value of ${responsePayload.state}`
           );
-
           res.status(200).json(responsePayload);
         }
       } else {
@@ -811,28 +809,14 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
       }
     });
 
-    // after looping through, update or add...
-
     if (Array.isArray(accessoriesToUpdateArray) && accessoriesToUpdateArray.length > 0) {
       // update zones/accessories in Homebridge and HomeKit
       this.api.updatePlatformAccessories(accessoriesToUpdateArray);
-      // set the switch to inverted state immediately after it's been added to Homebridge/HomeKit
-      // accessoriesToUpdateArray.forEach((accessory) => {
-      //   if (['switch'].includes(accessory.context.device.type) && accessory.context.device.invert === true) {
-      //     this.actuateAccessory(accessory.UUID, true);
-      //   }
-      // });
     }
 
     if (Array.isArray(accessoriesToAddArray) && accessoriesToAddArray.length > 0) {
       // add zones/accessories to Homebridge and HomeKit
       this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, accessoriesToAddArray);
-      // set the switch to inverted state immediately after it's been added to Homebridge/HomeKit
-      // accessoriesToAddArray.forEach((accessory) => {
-      //   if (['switch'].includes(accessory.context.device.type) && accessory.context.device.invert === true) {
-      //     this.actuateAccessory(accessory.UUID, true);
-      //   }
-      // });
     }
   }
 
