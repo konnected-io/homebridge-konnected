@@ -35,7 +35,6 @@
 
 # Upcoming Features
 
-  * Adding option to set poll intervals for DHT/DS18B20 sensors
   * Professional 24/7 smart home monitoring (powered by [Noonlight](https://noonlight.com/))
 
 # Installation
@@ -141,7 +140,10 @@ For those without Config UI X, or are running this on HOOBS < 4.0, please see th
           "enabled": false,
           "zoneNumber": "4",
           "zoneType": "temphumid",
-          "zoneLocation": "Kitchen"
+          "zoneLocation": "Kitchen",
+          "environmentalSensorSettings": {
+            "pollInterval": 10
+          }
         }
       ]
     }
@@ -187,14 +189,16 @@ For those without Config UI X, or are running this on HOOBS < 4.0, please see th
       * "strobe" *(actuator switch)*
       * "switch" *(actuator switch)*
     * **"zoneLocation"**: *(optional)* Custom name for the zone's location (E.g., Kitchen).
-    * **"binarySensorSettings"**: *(optional)* Binary-sensors-only object of settings (no temperature or humidity sensors):
+    * **"binarySensorSettings"**: *(optional)* Binary-sensors-only settings (not temperature or humidity sensors):
       * **"invert"**: *(optional)* Flip the state of a zone sensor's input. (Values: true or false).
       * **"audibleBeep"**: *(optional)* Whether or not the sensor should trigger the beeper when its state changes. (Values: true or false).
       * **"triggerableModes"**: *(optional)* Choose which modes this sensor will trigger the security system alarm. Any one of the following:
         * "0" for home/stay mode
         * "1" for away mode
         * "2" for night mode
-    * **"switchSettings"**: *(optional)* Switch-only object of settings when actuating the switch:
+    * **"environmentalSensorSettings"**: *(optional)* Temperature or humidity sensor settings:
+      * **"pollInterval"**: *(optional)* Length of time in minutes that this sensor will report its value. (Values between 1 and 1440, default is 3).
+    * **"switchSettings"**: *(optional)* Switch-only settings when actuating the switch:
       * **"trigger"**: *(optional)* Force the state of a switch when it is triggered to 'ON'. (Values: "high" or "low", unselected default is "high").
       * **"pulseDuration"**: *(optional)* How long the pulse is maintained in the on state for (in milliseconds).
       * **"pulsePause"**: *(conditional - required if pulseRepeat exists)* Pause between pulses (in milliseconds).
@@ -204,14 +208,29 @@ For those without Config UI X, or are running this on HOOBS < 4.0, please see th
         * "1" for away mode
         * "2" for night mode
 
-### Particulars Around Triggering Beeper, Siren, and Strobe Actuators:
+# Particulars
+
+### Security System Modes:
+
+There are four main states for most traditional alarm systems (thanks to @ShaunBennett for nicely writing out their suggested purpose):
+1. **Home/Stay:** You might want to freely roam your house while the perimeter is secure, yet be alerted when smoke/water/CO sensors detect problems or front/side doors/gates are opened unexpectedly.
+2. **Night:** You sleep upstairs and want to only have motion sensors downstairs trigger the security system at night.
+3. **Away:** Set as many binary sensors as you like to detect changes and trigger the security system.
+4. **Disarmed:** Nothing will trigger the security system at all.
+
+That being said, HomeKit has the ability to programmatically hide both the Home/Stay mode and the Night mode if you don't use them. What's even better – this plugin will dynamically choose whether or not these security system modes are needed based on what ***triggerable modes*** are selected for sensors or switches.
+
+If you don't want a Night mode for the security system, remove the Night mode from the triggerable mode setting for all sensors and switches; the same goes for the Home/Stay mode as well.
+
+### Triggering Beeper, Siren, and Strobe Actuators:
 
 The Konnected Homebridge plugin affords some automatic conveniences when actuating Beepers, Sirens and Strobe zones. This means that if you wish to have any of these types of devices working in your security system, they must be specifically set in the zone to be a "beeper", "siren", or "strobe".
 
-Homebridge will automatically find the correct panels and zones that they exist at, and actuate them based on their configuration, based on common security system scenarios.
+Homebridge will automatically find the beepers, sirens and strobe switches, no matter what panel they are on, and actuate them based on their configuration.
 
-More specifically, when the security system is in a state of 'entry delay', beeper zones may be triggered to warn a user that the system is armed and needs to be disarmed.
+**For Example:**
 
+When the security system is in a state of 'entry delay', beeper zones may be triggered to warn a user that the system is armed and needs to be disarmed.
 When the security system has passed the time of 'entry delay' and becomes triggered, the alarm should sound and the siren and strobe light zones will be triggered.
 
 The great thing is that you can have multiple beepers, or sirens and strobe lights all fire off as one – but exist on different panels and zones across your house.
