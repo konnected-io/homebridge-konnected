@@ -36,7 +36,6 @@
 # Upcoming Features
 
   * Adding option to set poll intervals for DHT/DS18B20 sensors
-  * Add option to have a panic button tile to trigger the alarm system
   * Professional 24/7 smart home monitoring (powered by [Noonlight](https://noonlight.com/))
 
 # Installation
