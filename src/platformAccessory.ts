@@ -39,14 +39,50 @@ export class KonnectedPlatformAccessory {
 
     switch (this.accessoryServiceType) {
       case 'SecuritySystem':
-        this.service.getCharacteristic(this.platform.Characteristic.SecuritySystemCurrentState)
-          .onGet(this.getSecuritySystemCurrentState.bind(this));
-        this.service.getCharacteristic(this.platform.Characteristic.SecuritySystemTargetState)
-          /**
-           * @removed 'Security System Target State': characteristic was supplied illegal value: number 4 exceeded maximum of 3. See https://git.io/JtMGR for more info.
-           * .onGet(this.getSecuritySystemTargetState.bind(this))
-           */
-          .onSet(this.setSecuritySystemTargetState.bind(this));
+        {
+          // default/required security system modes for HomeKit app
+          const validValues = [
+            this.platform.Characteristic.SecuritySystemTargetState.DISARM,
+            this.platform.Characteristic.SecuritySystemTargetState.AWAY_ARM,
+            // this.platform.Characteristic.SecuritySystemTargetState.STAY_ARM,
+            // this.platform.Characteristic.SecuritySystemTargetState.NIGHT_ARM,
+          ];
+          let stayHomeModeUsed = false,
+            nightModeUsed = false;
+          // find which security system modes are required/set by sensors and switches
+          this.platform.accessories.forEach((existingAccessory) => {
+            if (existingAccessory.context.device.triggerableModes?.includes('0')) { // stay/home
+              stayHomeModeUsed = true;
+              this.platform.log.debug(
+                `[${existingAccessory.displayName}] (${existingAccessory.context.device.serialNumber}) '${existingAccessory.context.device.type}' has Stay/Home Mode triggerable.`
+              );
+            }
+            if (existingAccessory.context.device.triggerableModes?.includes('2')) { // night
+              nightModeUsed = true;
+              this.platform.log.debug(
+                `[${existingAccessory.displayName}] (${existingAccessory.context.device.serialNumber}) '${existingAccessory.context.device.type}' has Night Mode triggerable.`
+              );
+            }
+          });
+          if (stayHomeModeUsed) {
+            validValues.push(this.platform.Characteristic.SecuritySystemTargetState.STAY_ARM);
+          }
+          if (nightModeUsed) {
+            validValues.push(this.platform.Characteristic.SecuritySystemTargetState.NIGHT_ARM);
+          }
+
+          this.service
+            .getCharacteristic(this.platform.Characteristic.SecuritySystemCurrentState)
+            .onGet(this.getSecuritySystemCurrentState.bind(this));
+          this.service
+            .getCharacteristic(this.platform.Characteristic.SecuritySystemTargetState)
+            .setProps({ validValues })
+            /**
+            * @removed 'Security System Target State': characteristic was supplied illegal value: number 4 exceeded maximum of 3. See https://git.io/JtMGR for more info.
+            * .onGet(this.getSecuritySystemTargetState.bind(this))
+            */
+            .onSet(this.setSecuritySystemTargetState.bind(this));
+        }
         break;
 
       case 'ContactSensor':
@@ -169,7 +205,7 @@ export class KonnectedPlatformAccessory {
 
   // get and set the security system states
   getSecuritySystemState(characteristic: string) {
-    let value = 0; // default to Home (in case of catastrophic reset when not home, this preserves the home's security)
+    let value = 1; // default to Away (in case of catastrophic reset when not home, this preserves the home's security)
     // set defaults
     if (typeof this.accessory.context.device.state === 'undefined') {
       this.accessory.context.device.state = value;
