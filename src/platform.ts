@@ -826,26 +826,26 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
    * Update the cache when a panel reports a change in the sensor zone's state.
    * Panels only report state of sensors, so this will only fire for sensors and not actuators.
    *
-   * @param req object  The request payload received for the zone at this plugin's listener REST endpoint.
+   * @param inboundPayload object  The request payload received for the zone at this plugin's listener REST endpoint.
    */
-  updateSensorAccessoryState(req) {
+  updateSensorAccessoryState(inboundPayload) {
     let panelZone = '';
     let zoneState = '';
-    if ('pin' in req.body) {
+    if ('pin' in inboundPayload.body) {
       // convert a pin to a zone
       Object.entries(ZONES_TO_PINS).map(([key, value]) => {
-        if (value === req.body.pin) {
+        if (value === inboundPayload.body.pin) {
           panelZone = key;
-          zoneState = JSON.stringify(req.body) + ` (zone: ${panelZone})`;
+          zoneState = JSON.stringify(inboundPayload.body) + ` (zone: ${panelZone})`;
         }
       });
     } else {
       // use the zone
-      panelZone = req.body.zone;
-      zoneState = JSON.stringify(req.body);
+      panelZone = inboundPayload.body.zone;
+      zoneState = JSON.stringify(inboundPayload.body);
     }
 
-    const zoneUUID = this.api.hap.uuid.generate(req.params.id + '-' + panelZone);
+    const zoneUUID = this.api.hap.uuid.generate(inboundPayload.params.id + '-' + panelZone);
 
     const existingAccessory = this.accessories.find((accessory) => accessory.UUID === zoneUUID);
 
@@ -859,13 +859,10 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
       // loop through the accessories state cache and update state and service characteristic
       this.accessoriesRuntimeCache.forEach((runtimeCacheAccessory) => {
         if (runtimeCacheAccessory.UUID === zoneUUID) {
+
           // this is the default state for all binary switches in HomeKit
           const defaultStateValue: boolean | number = runtimeCacheAccessory.type === 'motion' ? false : 0; // 0 = false in boolean
           // incoming state from panel
-          let requestStateValue: boolean | number = req.body.state;
-          // result state after invert check
-          let resultStateValue: boolean | number = requestStateValue;
-
           // we can't invert temperature or humidity sensors
           if (!['humidtemp', 'temperature'].includes(runtimeCacheAccessory.type)) {
             // invert the value if accessory is configured to have its value inverted
@@ -877,9 +874,13 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
                 resultStateValue = Boolean(requestStateValue);
               }
               this.log.debug(
-                `${runtimeCacheAccessory.displayName} (${runtimeCacheAccessory.serialNumber}): inverted state from '${requestStateValue}' to '${resultStateValue}'`
               );
+          const inboundStateValue: boolean | number = inboundPayload.body.state;
+          // set default result state
+          let resultStateValue: boolean | number = inboundStateValue;
+
             }
+              `${runtimeCacheAccessory.displayName} (${runtimeCacheAccessory.serialNumber}): inverted state from '${inboundStateValue}' to '${resultStateValue}'`
 
             // now check if the accessory should do something: e.g., trigger the alarm, produce an audible beep, etc.
             this.processSensorAccessoryActions(runtimeCacheAccessory, defaultStateValue, resultStateValue);
@@ -915,19 +916,19 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
               );
               break;
             case 'TemperatureSensor':
-              runtimeCacheAccessory.temp = req.body.temp;
+              runtimeCacheAccessory.temp = inboundPayload.body.temp;
               this.konnectedPlatformAccessories[runtimeCacheAccessory.UUID].service.updateCharacteristic(
                 this.Characteristic.CurrentTemperature,
                 runtimeCacheAccessory.temp
               );
               break;
             case 'HumiditySensor':
-              runtimeCacheAccessory.temp = req.body.temp;
+              runtimeCacheAccessory.temp = inboundPayload.body.temp;
               this.konnectedPlatformAccessories[runtimeCacheAccessory.UUID].service.updateCharacteristic(
                 this.Characteristic.CurrentTemperature,
                 runtimeCacheAccessory.temp
               );
-              runtimeCacheAccessory.humi = req.body.humi;
+              runtimeCacheAccessory.humi = inboundPayload.body.humi;
               this.konnectedPlatformAccessories[runtimeCacheAccessory.UUID].service.updateCharacteristic(
                 this.Characteristic.CurrentRelativeHumidity,
                 runtimeCacheAccessory.humi
