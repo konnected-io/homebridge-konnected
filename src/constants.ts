@@ -72,10 +72,18 @@ export const TYPES_TO_ACCESSORIES = {
   switch:         ['Switch',            'Generic Switch'],                // https://developers.homebridge.io/#/service/Switch
 };
 
-export const ALARM_CONSTANTS = {
+export const ALARM_NAMES_TO_NUMBERS = {
   STAY_ARM: 0,
   AWAY_ARM: 1,
   NIGHT_ARM: 2,
   DISARMED: 3,
   ALARM_TRIGGERED: 4,
+};
+
+export const ALARM_VALUES_TO_NAMES = (value: number) => {
+  Object.entries(ALARM_NAMES_TO_NUMBERS).find(([name, number]) => {
+    if (value === number) {
+      return name;
+    }
+  });
 };
