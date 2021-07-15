@@ -508,8 +508,8 @@
                       "placeholder": "(E.g., 3)"
                     },
                     "triggerableModes": {
-                      "title": "Triggerable Modes (experimental)",
-                      "description": "Choose which modes this switch will trigger the security system alarm.",
+                      "title": "⚠️ Triggerable Modes",
+                      "description": "⚠️ EXPERIMENTAL FEATURE:<br>Choose which modes this switch will trigger the security system alarm.<br>This may have unexpected consequences, it is best to leave these items unchecked.",
                       "type": "array",
                       "uniqueItems": true,
                       "items": {
