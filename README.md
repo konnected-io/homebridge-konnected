@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="https://github.com/homebridge/verified/blob/master/verified-plugins.json"><img alt="Homebridge Verified" src="https://raw.githubusercontent.com/konnected-io/homebridge-konnected/master/branding/Konnected_w_Homebridge.svg?sanitize=true" width="500px"></a>
+  <a href="https://konnected.io/?utm_campaign=homebridge" title="Konnected Plugin for Homebridge - Homebridge Verified"><img alt="Konnected Plugin for Homebridge - Homebridge Verified" src="https://raw.githubusercontent.com/konnected-io/homebridge-konnected/master/branding/Konnected_w_Homebridge.svg?sanitize=true" width="500px"></a>
 </p>
 
 # Konnected Homebridge Plugin
