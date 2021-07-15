@@ -553,11 +553,12 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
 
         // isolate specific panel and make sure there are zones in that panel
         if (configPanel.uuid === panelUUID && configPanel.zones) {
-          // variable for deduping zones with the same zoneNumber
-          // (use-case: if users don't use Config UI X to generate their config)
-          const zonesCheck: string[] = [];
+
+          // variable for deduping zones with the same zoneNumber (use-case: if users don't use Config UI X to generate their config)
+          const existingPayloadZones: string[] = [];
 
           configPanel.zones.forEach((configPanelZone) => {
+
             // create type interface for panelZone variable
             interface PanelZone {
               pin?: string;
@@ -640,9 +641,9 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
             const panelModel: string = 'model' in panelObject ? 'Pro' : 'V1-V2';
 
             // dedupe zones with the same zoneNumber
-            if (!zonesCheck.includes(zoneUUID)) {
+            if (!existingPayloadZones.includes(zoneUUID)) {
               // if not a duplicate, push the zone's UUID into the zoneCheck array
-              zonesCheck.push(zoneUUID);
+              existingPayloadZones.push(zoneUUID);
 
               const zoneLocation = configPanelZone.zoneLocation ? configPanelZone.zoneLocation + ' ' : '';
 
