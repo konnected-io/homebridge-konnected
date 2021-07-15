@@ -565,6 +565,7 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
               pin?: string;
               zone?: string;
               trigger?: number;
+              poll_interval?: number;
             }
             let panelZone: PanelZone = {};
 
@@ -619,6 +620,11 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
             // assign the startup trigger value
             if (configPanelZone.switchSettings?.trigger) {
               panelZone.trigger = configPanelZone.switchSettings?.trigger === 'low' ? 0 : 1;
+            }
+
+            // assign the temperature/humidity poll interval
+            if (configPanelZone.environmentalSensorSettings?.pollInterval) {
+              panelZone.poll_interval = configPanelZone.environmentalSensorSettings.pollInterval;
             }
 
             // check if the panel object is not empty (this will cause a boot loop if it's empty)

@@ -66,6 +66,7 @@ export interface RuntimeCacheInterface {
   serialNumber: string;
   panel: PanelObjectInterface;
   invert?: boolean;
+  pollInterval?: number;
   audibleBeep?: boolean;
   trigger?: string;
   triggerableModes?: [];
