@@ -1,11 +1,11 @@
 {
-  "displayName": "Konnected Security",
+  "displayName": "Homebridge Konnected",
   "name": "homebridge-konnected",
   "version": "1.1.0",
-  "description": "Konnected Alarm Panel plugin for Homebridge",
   "author": "Mike Kormendy <mike@somethinginteractive.com> (https://mikekormendy.com)",
   "contributors": [
     "Valentine Mhlanga <valentine@themhlangas.com>"
+  "description": "Homebridge plugin for Konnected security alarm systems",
   ],
   "license": "MIT",
   "homepage": "https://konnected.io",
