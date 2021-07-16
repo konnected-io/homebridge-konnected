@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="https://konnected.io/?utm_campaign=homebridge" title="Konnected Plugin for Homebridge - Homebridge Verified"><img alt="Konnected Plugin for Homebridge - Homebridge Verified" src="https://raw.githubusercontent.com/konnected-io/homebridge-konnected/master/branding/Konnected_w_Homebridge.svg?sanitize=true" width="500px"></a>
+  <a href="https://konnected.io/?utm_campaign=homebridge" title="Konnected Plugin for Homebridge - Homebridge Verified"><img alt="Konnected Logo and Homebridge Logo" src="https://raw.githubusercontent.com/konnected-io/homebridge-konnected/master/branding/Konnected_w_Homebridge.svg?sanitize=true" width="500px"></a>
 </p>
 
 # Konnected Homebridge Plugin
@@ -19,18 +19,27 @@
 
 # Supported Features
 
-  * Sensors
-    * Contact Sensor States
-    * Motion Sensor States
-    * Glass Break Sensor States
-    * Temperature Sensor States
-    * Humidity Sensor States
-    * Smoke Sensor States
-    * Water Sensor States
-  * Actuators
-    * Alarm Beeper Switch
-    * Alarm Siren Switch
-    * Alarm Strobe Light Switch
+  * Native HomeKit Security System Control
+    * Arm/Disarm Security System
+    * Optional Home/Stay and Night Modes
+    * Configurable Sensor Security System Triggering
+    * Configuranle Entry Delay Times
+    * Traditional Security System Integration
+    * Panic Button via Alarm Siren Switch
+    * Inverting Sensors
+    * Switch Trigger States (high vs low)
+  * Sensor States
+    * Contact
+    * Motion
+    * Glass Break
+    * Temperature
+    * Humidity
+    * Smoke
+    * Water Leak
+  * Switches/Actuators
+    * Beeper
+    * Siren
+    * Strobe Light
     * Generic Switch
 
 # Upcoming Features
@@ -151,7 +160,6 @@ For those without Config UI X, or are running this on HOOBS < 4.0, please see th
 }
 ```
 
-
 ### Configuration Field Explanations:
 
 * **"platform"**: *(required)* Must always be "konnected" 
@@ -238,6 +246,7 @@ The great thing is that you can have multiple beepers, or sirens and strobe ligh
 # Troubleshooting
 
 ### Missing/Stale Accessories:
+
 Sometimes you may need to reboot Homebridge **once-more** after changes made to the configuration for the zone accessories to show up the first time or to reflect the changes and work properly in HomeKit. This is partially because this Homebridge plugin uses a cache to keep it performant and needs to rebuild it once on launch, and then read from it on second launch to update the accessories in HomeKit.
 
 Also it's always good to restart the HomeKit app after changes made to the Homebridge configuration as HomeKit does some background cleanup to the states and presence of devices in its accessory database.
