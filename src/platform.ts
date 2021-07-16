@@ -115,9 +115,6 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
 
     // restart/crash cleanup
     const cleanup = () => {
-      server.on('close', () => {
-        process.exit(0);
-      });
       server.close();
       this.log.info(`Listening port ${this.listenerPort} closed and released`);
     };
