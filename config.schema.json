@@ -439,7 +439,7 @@
                     },
                     "triggerableModes": {
                       "title": "Triggerable Modes",
-                      "description": "Choose which modes this sensor will trigger the security system alarm.<br>If \"Home\" and/or \"Night\" mode are deselected for all sensors and switches, then the HomeKit app will hide those two modes from the app's Security System accessory control.<br><br>NOTE: when setting up Konnected panels with most traditional security systems, the \"Home\" and/or \"Night\" modes don't operate bi-directionally and should be deselected for all sensors and switches.",
+                      "description": "Choose which modes (0 = Home/Stay, 1 = Away, 2 = Night) this sensor will trigger the security system alarm.<br>If \"Home\" and/or \"Night\" mode are deselected for all sensors and switches, then the HomeKit app will hide those two modes from the app's Security System accessory control.<br><br>NOTE: when setting up Konnected panels with most traditional security systems, the \"Home\" and/or \"Night\" modes don't operate bi-directionally and should be deselected for all sensors and switches.<br>",
                       "type": "array",
                       "uniqueItems": true,
                       "items": {
