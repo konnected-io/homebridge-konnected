@@ -179,7 +179,6 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
           this.accessoriesRuntimeCache.find((runtimeCacheAccessory) => {
             if (runtimeCacheAccessory.serialNumber === req.params.id + '-' + requestPanelZone) {
               if (['beeper', 'siren', 'strobe', 'switch'].includes(runtimeCacheAccessory.type)) {
-
                 if (runtimeCacheAccessory.trigger === 'low' && runtimeCacheAccessory.state === false) {
                   responsePayload.state = 1; // set to normally high (1), waiting to be triggered low (0)
                 } else if (runtimeCacheAccessory.trigger === 'low' && (runtimeCacheAccessory.state === true || runtimeCacheAccessory.state === undefined)) {
@@ -189,12 +188,9 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
                 } else if ((runtimeCacheAccessory.trigger === 'high' || runtimeCacheAccessory.trigger === undefined) && runtimeCacheAccessory.state === true) {
                   responsePayload.state = 1; // set to triggered high (1), waiting to be normally low (0)
                 }
-                
               } else {
-
                 responsePayload.state =
                   typeof runtimeCacheAccessory.state !== 'undefined' ? Number(runtimeCacheAccessory.state) : 0;
-
               }
             }
           });
@@ -311,10 +307,8 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
 
     // on discovery
     ssdpClient.on('response', (headers) => {
-
       // check for only Konnected devices
       if (headers.ST!.indexOf(ssdpUrnPartial) !== -1) {
-
         // store reported URL of panel that responded
         const ssdpHeaderLocation: string = headers.LOCATION || '';
         // extract UUID of panel from the USN string
@@ -538,7 +532,6 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
 
     // if there are panels in the plugin config
     if (typeof this.config.panels !== 'undefined') {
-
       // loop through the available panels
       this.config.panels.forEach((configPanel) => {
         // If there's a chipId in the panelObject, use that, or use mac address.
@@ -552,7 +545,6 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
 
         // isolate specific panel and make sure there are zones in that panel
         if (configPanel.uuid === panelUUID && configPanel.zones) {
-
           // variable for deduping zones with the same zoneNumber (use-case: if users don't use Config UI X to generate their config)
           const existingPayloadZones: string[] = [];
 
@@ -579,7 +571,6 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
                 // validate if zone can be an actuator/switch
                 if (ZONES[configPanelZone.zoneNumber].includes(configPanelZone.zoneType)) {
                   panelZone.zone = configPanelZone.zoneNumber;
-                  
                 } else {
                   this.log.warn(
                     `Invalid Zone: Konnected Pro Alarm Panels cannot have zone ${configPanelZone.zoneNumber} as an actuator/switch. Try zones 1-8, 'alarm1', 'out1', or 'alarm2_out2'.`
@@ -862,7 +853,6 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
       // loop through the accessories state cache and update state and service characteristic
       this.accessoriesRuntimeCache.forEach((runtimeCacheAccessory) => {
         if (runtimeCacheAccessory.UUID === zoneUUID) {
-
           // this is the default state for all binary switches in HomeKit
           const defaultStateValue: boolean | number = runtimeCacheAccessory.type === 'motion' ? false : 0; // 0 = false in boolean
           // incoming state from panel
@@ -956,8 +946,6 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
     defaultStateValue: boolean | number,
     resultStateValue: boolean | number
   ) {
-
-    
     // if the default state of the accessory is not the same as the updated state, we should process it
     if (defaultStateValue !== resultStateValue) {
       this.log.debug(
@@ -990,7 +978,6 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
           );
           this.controlSecuritySystem(4);
         }, this.entryTriggerDelay);
-
       } else {
         // accessory is just sensing change
 
@@ -1002,7 +989,6 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
             }
           });
         }
-
       }
     }
   }
@@ -1015,7 +1001,6 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
    * @param inboundSwitchSettings object  Settings object that can override the default accessory settings.
    */
   actuateAccessory(zoneUUID: string, value: boolean | number, inboundSwitchSettings: Record<string, unknown> | null) {
-
     // retrieve the matching accessory
     const existingAccessory = this.accessories.find((accessory) => accessory.UUID === zoneUUID);
 
@@ -1164,7 +1149,6 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
         accessory.context.device.state = value;
       }
     });
-
 
     // if the security system is turned off, turn beepers, sirens and strobes off
     if (value === 3) {
