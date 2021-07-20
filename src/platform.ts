@@ -10,7 +10,6 @@ import client from 'node-ssdp';      // for devices discovery
 import express from 'express';       // for the listening API
 import fetch from 'node-fetch';      // for making calls to the device
 import http from 'http';             // for creating a listening server
-import path from 'path';             // for getting filesystem meta
 import fs from 'fs';                 // for working with the filesystem
 import ip from 'ip';                 // for getting active IP on the system
 import { v4 as uuidv4 } from 'uuid'; // for handling UUIDs and creating auth tokens
@@ -387,55 +386,40 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
    * @param panelObject PanelObjectInterface  The status response object of the plugin from discovery.
    */
   updateHombridgeConfig(panelUUID: string, panelObject: PanelObjectInterface) {
-    // sanitize panel name
-    let panelName = typeof panelObject.model !== 'undefined' ? panelObject.model : 'Konnected V1-V2';
-    panelName = panelName.replace(/[^A-Za-z0-9\s/'":\-#.]/gi, ''); // sanitized
+    // homebridge constants
+    const config = this.api.user.configPath();
+    const storage = this.api.user.storagePath();
 
-    // create panel block with validated/sanitized panel name and UUID
-    const newPanel = {
-      name: panelName,
-      uuid: panelUUID,
-      ipAddress: panelObject.ip,
-      port: panelObject.port,
-    };
+    // get and clone config
+    const existingConfig = JSON.parse(fs.readFileSync(config).toString());
+    const modifiedConfig = JSON.parse(JSON.stringify(existingConfig));
 
     // check backups/config-backups directory exists, if not use base storage directory
-    const backupPath = fs.existsSync(this.api.user.storagePath() + '/backups/config-backups/')
-      ? this.api.user.storagePath() + '/backups/config-backups/config.json.' + new Date().getTime()
-      : this.api.user.storagePath() + '/config.json.' + new Date().getTime();
+    const backup = fs.existsSync(`${storage}/backups/config-backups/`)
+      ? `${storage}/backups/config-backups/config.json.${new Date().getTime()}`
+      : `${storage}/config.json.${new Date().getTime()}`;
 
-    // get Homebridge config file
-    const configPath = this.api.user.configPath();
-    const configRawData = fs.readFileSync(configPath);
-    const configJsonObject = JSON.parse(configRawData.toString());
+    // get index of my platform
+    const platform = modifiedConfig.platforms.findIndex((config: { [key: string]: unknown }) => config.platform === 'konnected');
 
-    // copy config to new variable for alterations
-    const newConfigJsonObject = configJsonObject;
+    // if 'konnected' platform exists in the config
+    if (platform >= 0) {
+      // get the panels array or start with an empty array
+      modifiedConfig.platforms[platform].panels = modifiedConfig.platforms[platform].panels || [];
 
-    // if we can read the JSON from the config
-    if (newConfigJsonObject) {
-      // loop through platforms
-      for (const platform of newConfigJsonObject.platforms) {
-        // isolate Konnected platform block
-        if (platform.platform === 'konnected') {
-          // if no panels defined in Konnected platform config block or
-          // we can't find the UUID property for the panel object in the panels array
-          if (typeof platform.panels === 'undefined' || !platform.panels.some((panel) => panel.uuid === panelUUID)) {
-            // if undefined, instantiate panels property as array
-            if (typeof platform.panels === 'undefined') {
-              platform.panels = [];
-            }
+      // find existing definition of the panel
+      const platformPanelPosition = modifiedConfig.platforms[platform].panels.findIndex((panel: { [key: string]: unknown }) => panel.uuid === panelUUID);
 
-            // push panel objects into panels array
-            platform.panels.push(newPanel);
-
-            // write backup config file
-            fs.writeFileSync(path.resolve(backupPath), JSON.stringify(configJsonObject, null, 4));
-
-            // write to config file
-            fs.writeFileSync(path.resolve(configPath), JSON.stringify(newConfigJsonObject, null, 4));
-          }
-        }
+      // if panel doesn't exist, push to panels array and write backup and config
+      if (platformPanelPosition < 0) {
+        modifiedConfig.platforms[platform].panels.push({
+          name: (panelObject.model && panelObject.model !== '' ? panelObject.model : 'Konnected V1-V2').replace(/[^A-Za-z0-9\s/'":\-#.]/gi, ''),
+          uuid: panelUUID,
+          ipAddress: panelObject.ip,
+          port: panelObject.port,
+        });
+        fs.writeFileSync(backup, JSON.stringify(existingConfig, null, 4));
+        fs.writeFileSync(config, JSON.stringify(modifiedConfig, null, 4));
       }
     }
   }
