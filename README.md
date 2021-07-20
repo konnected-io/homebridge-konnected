@@ -1,23 +1,21 @@
 <p align="center">
-  <a href="https://konnected.io/?utm_campaign=homebridge" title="Konnected Plugin for Homebridge - Homebridge Verified"><img alt="Konnected Logo and Homebridge Logo" src="https://raw.githubusercontent.com/konnected-io/homebridge-konnected/master/branding/Konnected_w_Homebridge.svg?sanitize=true" width="500px"></a>
+  <a href="https://konnected.io/?utm_campaign=homebridge" title="Konnected Plugin for Homebridge - Homebridge Verified"><img alt="Konnected Plugin for Homebridge - Homebridge Verified" src="https://raw.githubusercontent.com/konnected-io/homebridge-konnected/master/branding/Konnected_w_Homebridge.svg?sanitize=true" width="500px"></a>
 </p>
+<span align="center">
 
 # Konnected Homebridge Plugin
-[![GitHub Release](https://flat.badgen.net/github/release/konnected-io/homebridge-konnected/master?icon=github)](https://github.com/konnected-io/homebridge-konnected/releases)
-[![npm Release](https://flat.badgen.net/npm/v/homebridge-konnected?icon=npm)](https://www.npmjs.com/package/homebridge-konnected)
 
-[![Lint & Build](https://flat.badgen.net/github/checks/konnected-io/homebridge-konnected?icon=github&label=lint%20%26%20build)](https://github.com/konnected-io/homebridge-konnected/actions)
-[![npm Download Total](https://flat.badgen.net/npm/dt/homebridge-konnected?icon=npm)](https://www.npmjs.com/package/homebridge-konnected)
+[![GitHub Release](https://flat.badgen.net/github/release/konnected-io/homebridge-konnected/master?icon=github)](https://github.com/konnected-io/homebridge-konnected/releases) [![npm Release](https://flat.badgen.net/npm/v/homebridge-konnected?icon=npm)](https://www.npmjs.com/package/homebridge-konnected)
 
-[![Homebridge Verified](https://badgen.net/badge/homebridge/verified/purple)](https://github.com/homebridge/homebridge/wiki/Verified-Plugins)
-[![HOOBS Certified](https://flat.badgen.net/badge/hoobs/v4.0+/f89f1a)](https://plugins.hoobs.org/plugin/homebridge-konnected)
-[![Apple HomeKit](https://flat.badgen.net/badge/apple/homekit/f89f1a?icon=apple)](https://www.apple.com/ios/home/)
-[![License: MIT](https://flat.badgen.net/badge/license/MIT/blue)](https://github.com/konnected-io/homebridge-konnected/blob/master/LICENSE)
+[![Lint & Build](https://flat.badgen.net/github/checks/konnected-io/homebridge-konnected?icon=github&label=lint%20%26%20build)](https://github.com/konnected-io/homebridge-konnected/actions) [![npm Download Total](https://flat.badgen.net/npm/dt/homebridge-konnected?icon=npm)](https://www.npmjs.com/package/homebridge-konnected)
 
-| <center>Homebridge users get 15% off at [konnected.io](https://konnected.io/?utm_campaign=homebridge) through 12/31/2021.<br>Use code HOMEBRIDGE2021 at checkout!</center> |
-| --- |
+[![Homebridge Verified](https://badgen.net/badge/homebridge/verified/purple)](https://github.com/homebridge/homebridge/wiki/Verified-Plugins) [![HOOBS Certified](https://flat.badgen.net/badge/hoobs/certified/f89f1a)](https://plugins.hoobs.org/plugin/homebridge-konnected) [![Apple HomeKit](https://flat.badgen.net/badge/apple/homekit/f89f1a?icon=apple)](https://www.apple.com/ios/home/) [![License: MIT](https://flat.badgen.net/badge/license/MIT/blue)](https://github.com/konnected-io/homebridge-konnected/blob/master/LICENSE)
 
-# Supported Features
+**[Homebridge users get 15% off at konnected.io through 12/31/2021.<br>Use code HOMEBRIDGE2021 at checkout!](https://konnected.io/?utm_campaign=homebridge)**
+
+</span>
+
+## Supported Features
 
   * Native HomeKit Security System Control
     * Arm/Disarm Security System
@@ -42,17 +40,17 @@
     * Strobe Light
     * Generic Switch
 
-# Upcoming Features
+## Upcoming Features
 
   * Professional 24/7 smart home monitoring (powered by [Noonlight](https://noonlight.com/))
 
-# Installation
+## Installation
 
   1. Install homebridge: `npm install -g homebridge`
   2. Install this plugin: `npm install -g homebridge-konnected`
   3. Update your configuration file
 
-# Configuration
+## Configuration
 
 ### Starter Settings for config.json:
 The following two fields are required for the Konnected plugin to start.
@@ -216,7 +214,7 @@ For those without Config UI X, or are running this on HOOBS < 4.0, please see th
         * "1" for away mode
         * "2" for night mode
 
-# Particulars
+## Particulars
 
 ### Security System Modes:
 
@@ -243,7 +241,7 @@ When the security system has passed the time of 'entry delay' and becomes trigge
 
 The great thing is that you can have multiple beepers, or sirens and strobe lights all fire off as one – but exist on different panels and zones across your house.
 
-# Troubleshooting
+## Troubleshooting
 
 ### Missing/Stale Accessories:
 
@@ -293,5 +291,5 @@ Sometimes fixing a problematic Homebridge/HOOBS/HomeKit accessory is as simple a
 
 3. Once the file is deleted, start up Homebridge/HOOBS and allow it to regenerate your accessories and the cache.
 
-**WARNING:** Be careful to not delete the `persist` folder or its contents! Your Homebridge and devices will become unresponsive and you will have to entirely re-pair the Homebridge bridge (remove and re-scan the QR-code for Homebridge and set up all of your accessories/devices again).
+**WARNING:** Be careful to not delete the `persist` folder or its contents! Your Homebridge and devices will become unresponsive and you will have to completely re-pair the Homebridge bridge (remove and re-scan the QR-code for Homebridge and set up all of your accessories/devices again).
 
