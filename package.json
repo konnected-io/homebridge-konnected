@@ -1,7 +1,7 @@
 {
   "displayName": "Homebridge Konnected",
   "name": "homebridge-konnected",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "Homebridge plugin for Konnected security alarm systems",
   "author": "Mike Kormendy <info@mikekormendy.com> (https://mikekormendy.com)",
   "funding": [
