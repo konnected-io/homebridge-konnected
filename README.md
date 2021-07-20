@@ -176,8 +176,8 @@ For those without Config UI X, or are running this on HOOBS < 4.0, please see th
 * **"panels"**: A panel must exist to associate different sensors and actuators with zones. This section is an array of objects that represent the various panel details and features as well as zones:
   * **"name"** *(required)* The name of the specific panel.
   * **"UUID"** *(required/auto-generated/readonly)* The unique identifier for the panel.
-  * **"ipAddress"** *(optional/auto-generated)* The active IP address of the panel.
-  * **"port"** *(optional/auto-generated)* The active network port of the panel.
+  * **"ipAddress"** *(required/auto-generated/changeable)* The active IP address of the panel.
+  * **"port"** *(required/auto-generated/changeable)* The active network port of the panel.
   * **"blink"** *(optional)* Blink panel LED when zones change/report their state. (Values: true or false).
   * **"zones"**: *(optional)* An array of objects that represent assigned zones on the panel:
     * **"enabled"**: Conveniently lets you to create zone settings in the config.json file but not have them actually be provisioned in the panel nor create an accessory in HomeKit. (Values: true or false).

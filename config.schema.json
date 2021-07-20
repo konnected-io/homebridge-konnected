@@ -101,12 +101,12 @@
             "readonly": true
           },
           "ipAddress": {
-            "title": "IP Address (changeable)",
+            "title": "IP Address (required but changeable)",
             "type": "string",
             "format": "ipv4"
           },
           "port": {
-            "title": "Port (changeable)",
+            "title": "Port (required but changeable)",
             "type": "number",
             "step": 1,
             "minimum": 1000,
