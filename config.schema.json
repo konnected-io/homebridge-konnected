@@ -11,6 +11,7 @@
       "required": true
     },
     "advanced": {
+      "title": "Advanced",
       "type": "object",
       "expandable": true,
       "expanded": false,
@@ -83,6 +84,7 @@
       }
     },
     "panels": {
+      "title": "Panels",
       "description": "These are the individual Konnected Alarm Panel module boards.",
       "type": "array",
       "orderable": true,
@@ -118,6 +120,7 @@
             "default": true
           },
           "zones": {
+            "title": "Zones",
             "description": "Customize the names and types of your zones.<br><span class='primary-text'>You need to define your zones here to create sensor and actuator accessories in HomeKit.</span>",
             "type": "array",
             "maxItems": 15,
@@ -417,6 +420,7 @@
                   }
                 },
                 "binarySensorSettings": {
+                  "title": "Binary Sensor Settings",
                   "type": "object",
                   "condition": {
                     "functionBody": "try { return ['contact','motion','glass','water','smoke'].includes(model.panels[arrayIndices[0]].zones[arrayIndices[1]].zoneType) } catch (e) { return false }"
@@ -456,6 +460,7 @@
                   }
                 },
                 "environmentalSensorSettings": {
+                  "title": "Environmental Sensor Settings",
                   "type": "object",
                   "condition": {
                     "functionBody": "try { return ['humidtemp','temperature'].includes(model.panels[arrayIndices[0]].zones[arrayIndices[1]].zoneType) } catch (e) { return false }"
@@ -475,6 +480,7 @@
                   }
                 },
                 "switchSettings": {
+                  "title": "Switch Settings",
                   "type": "object",
                   "condition": {
                     "functionBody": "try { return ['beeper','siren','strobe','switch'].includes(model.panels[arrayIndices[0]].zones[arrayIndices[1]].zoneType) } catch(e){return false}"
