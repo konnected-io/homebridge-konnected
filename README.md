@@ -21,8 +21,8 @@
     * Arm/Disarm Security System
     * Optional Home/Stay and Night Modes
     * Configurable Sensor Security System Triggering
-    * Configuranle Entry Delay Times
-    * Traditional Security System Integration
+    * Configurable Entry Delay Times
+    * Traditional Alarm System Integration
     * Panic Button via Alarm Siren Switch
     * Inverting Sensors
     * Switch Trigger States (high vs low)
