@@ -855,10 +855,9 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
             this.log.debug(
               `${runtimeCacheAccessory.displayName} (${runtimeCacheAccessory.serialNumber}): inverted state from '${inboundStateValue}' to '${resultStateValue}'`
             );
-
-            // now check if the accessory should do something: e.g., trigger the alarm, produce an audible beep, etc.
-            this.processSensorAccessoryActions(runtimeCacheAccessory, defaultStateValue, resultStateValue);
           }
+          // now check if the accessory should do something: e.g., trigger the alarm, produce an audible beep, etc.
+          this.processSensorAccessoryActions(runtimeCacheAccessory, defaultStateValue, resultStateValue);
 
           switch (TYPES_TO_ACCESSORIES[runtimeCacheAccessory.type][0]) {
             case 'ContactSensor':
