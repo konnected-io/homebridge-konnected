@@ -10,10 +10,13 @@ export class KonnectedPlatformAccessory {
   private service: Service;
   private accessoryServiceType: string;
   private temperatureSensorService;
+  private validSecuritySystemStates: number[];
 
   constructor(private readonly platform: KonnectedHomebridgePlatform, private readonly accessory: PlatformAccessory) {
     // translate the accessory type to the service type
     this.accessoryServiceType = TYPES_TO_ACCESSORIES[this.accessory.context.device.type][0];
+
+    this.validSecuritySystemStates = [];
 
     // set accessory information
     this.accessory
@@ -41,14 +44,14 @@ export class KonnectedPlatformAccessory {
       case 'SecuritySystem':
         {
           // default/required security system modes for HomeKit app
-          const validValues = [
+          this.validSecuritySystemStates = [
             this.platform.Characteristic.SecuritySystemTargetState.DISARM,
             this.platform.Characteristic.SecuritySystemTargetState.AWAY_ARM,
             // this.platform.Characteristic.SecuritySystemTargetState.STAY_ARM,
             // this.platform.Characteristic.SecuritySystemTargetState.NIGHT_ARM,
           ];
-          let stayHomeModeUsed = false,
-            nightModeUsed = false;
+          let stayHomeModeUsed = false;
+          let nightModeUsed    = false;
           // find which security system modes are required/set by sensors and switches
           this.platform.accessories.forEach((existingAccessory) => {
             if (existingAccessory.context.device.triggerableModes?.includes('0')) { // stay/home
@@ -65,11 +68,13 @@ export class KonnectedPlatformAccessory {
             }
           });
           if (stayHomeModeUsed) {
-            validValues.push(this.platform.Characteristic.SecuritySystemTargetState.STAY_ARM);
+            this.validSecuritySystemStates.push(this.platform.Characteristic.SecuritySystemTargetState.STAY_ARM);
           }
           if (nightModeUsed) {
-            validValues.push(this.platform.Characteristic.SecuritySystemTargetState.NIGHT_ARM);
+            this.validSecuritySystemStates.push(this.platform.Characteristic.SecuritySystemTargetState.NIGHT_ARM);
           }
+
+          const validValues = this.validSecuritySystemStates;
 
           this.service
             .getCharacteristic(this.platform.Characteristic.SecuritySystemCurrentState)
@@ -77,10 +82,7 @@ export class KonnectedPlatformAccessory {
           this.service
             .getCharacteristic(this.platform.Characteristic.SecuritySystemTargetState)
             .setProps({ validValues })
-            /**
-            * @removed 'Security System Target State': characteristic was supplied illegal value: number 4 exceeded maximum of 3. See https://git.io/JtMGR for more info.
-            * .onGet(this.getSecuritySystemTargetState.bind(this))
-            */
+            .onGet(this.getSecuritySystemTargetState.bind(this))
             .onSet(this.setSecuritySystemTargetState.bind(this));
         }
         break;
@@ -206,8 +208,14 @@ export class KonnectedPlatformAccessory {
   // get and set the security system states
   getSecuritySystemState(characteristic: string) {
     let value = 1; // default to Away (in case of catastrophic reset when not home, this preserves the home's security)
-    // set defaults
-    if (typeof this.accessory.context.device.state === 'undefined') {
+    // set default as 1, if there's no previous accessory state in Homebridge cache
+    // or if the secuity system state exists but isn't a valid value for the states available
+    // e.g., if the system was set to Home (0), but Home is not a state that is available
+    // because the user didn't want or choose it for any of the sensors to trigger in
+    if (
+      typeof this.accessory.context.device.state === 'undefined' ||
+      !this.validSecuritySystemStates.includes(this.accessory.context.device.state)
+    ) {
       this.accessory.context.device.state = value;
       this.platform.log.debug(
         `Assigning default state '${value}' to [${this.accessory.context.device.displayName}] (${this.accessory.context.device.serialNumber}) '${this.accessoryServiceType}' characteristic value. Awaiting zone's first state change...`
