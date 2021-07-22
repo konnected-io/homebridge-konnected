@@ -844,20 +844,22 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
           // set default result state
           let resultStateValue: boolean | number = inboundStateValue;
 
-          // invert the value if accessory is not a temperature or humidity sensor and is configured to have its value inverted
-          if (!['humidtemp', 'temperature'].includes(runtimeCacheAccessory.type) && runtimeCacheAccessory.invert === true) {  
-            // switch value
-            resultStateValue = inboundStateValue === 0 ? 1 : 0;
-            // motion sensor's state is a boolean characteristic
-            if (runtimeCacheAccessory.type === 'motion') {
-              resultStateValue = Boolean(inboundStateValue);
+          if (!['humidtemp', 'temperature'].includes(runtimeCacheAccessory.type)) {
+            // invert the value if configured to have its value inverted
+            if (runtimeCacheAccessory.invert === true) {
+              // switch value
+              resultStateValue = inboundStateValue === 0 ? 1 : 0;
+              // motion sensor's state is a boolean characteristic
+              if (runtimeCacheAccessory.type === 'motion') {
+                resultStateValue = Boolean(inboundStateValue);
+              }
+              this.log.debug(
+                `${runtimeCacheAccessory.displayName} (${runtimeCacheAccessory.serialNumber}): inverted state from '${inboundStateValue}' to '${resultStateValue}'`
+              );
             }
-            this.log.debug(
-              `${runtimeCacheAccessory.displayName} (${runtimeCacheAccessory.serialNumber}): inverted state from '${inboundStateValue}' to '${resultStateValue}'`
-            );
+            // now check if the accessory should do something: e.g., trigger the alarm, produce an audible beep, etc.
+            this.processSensorAccessoryActions(runtimeCacheAccessory, defaultStateValue, resultStateValue);
           }
-          // now check if the accessory should do something: e.g., trigger the alarm, produce an audible beep, etc.
-          this.processSensorAccessoryActions(runtimeCacheAccessory, defaultStateValue, resultStateValue);
 
           switch (TYPES_TO_ACCESSORIES[runtimeCacheAccessory.type][0]) {
             case 'ContactSensor':
