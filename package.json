@@ -3,21 +3,7 @@
   "name": "homebridge-konnected",
   "version": "1.1.4",
   "description": "Homebridge plugin for Konnected security alarm systems",
-  "author": "Mike Kormendy <info@mikekormendy.com> (https://mikekormendy.com)",
-  "funding": [
-    {
-      "type": "github",
-      "url": "https://github.com/sponsors/mkormendy"
-    },
-    {
-      "type": "ko-fi",
-      "url": "https://ko-fi.com/mikekormendy"
-    },
-    {
-      "type": "individual",
-      "url": "https://www.paypal.me/mikekormendy"
-    }
-  ],
+  "author": "mkormendy",
   "license": "MIT",
   "homepage": "https://konnected.io",
   "repository": {
@@ -97,5 +83,19 @@
     "rimraf": "^3.0.2",
     "ts-node": "^10.0.0",
     "typescript": "^4.3.5"
-  }
+  },
+  "funding": [
+    {
+      "type": "github",
+      "url": "https://github.com/sponsors/mkormendy"
+    },
+    {
+      "type": "paypal",
+      "url": "https://www.paypal.me/mikekormendy"
+    },
+    {
+      "type": "ko-fi",
+      "url": "https://ko-fi.com/mikekormendy"
+    }
+  ]
 }
