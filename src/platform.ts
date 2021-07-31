@@ -949,13 +949,11 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
         // find beepers and actuate audible delay sound
         this.accessoriesRuntimeCache.forEach((beeperAccessory) => {
           if (beeperAccessory.type === 'beeper') {
-            let beeperSettings;
             if (this.config.advanced?.entryDelaySettings?.pulseDuration) {
-              beeperSettings = this.config.advanced?.entryDelaySettings;
+              this.actuateAccessory(beeperAccessory.UUID, true, this.config.advanced?.entryDelaySettings);
             } else {
-              beeperSettings = null;
+              this.actuateAccessory(beeperAccessory.UUID, true, {});
             }
-            this.actuateAccessory(beeperAccessory.UUID, true, beeperSettings);
           }
         });
 
@@ -986,12 +984,13 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
    *
    * @param zoneUUID string  HAP UUID for the switch zone accessory.
    * @param value boolean  The value of the state as represented in HomeKit (may be adjusted by config trigger settings).
-   * @param inboundSwitchSettings object  Settings object that can override the default accessory settings.
+   * @param inboundSwitchSettings object | null | undefined  Settings object that can override the default accessory settings.
    */
   actuateAccessory(zoneUUID: string, value: boolean | number, inboundSwitchSettings: Record<string, unknown> | null) {
     // retrieve the matching accessory
     const existingAccessory = this.accessories.find((accessory) => accessory.UUID === zoneUUID);
 
+    // set the representative state in HomeKit
     this.konnectedPlatformAccessories[zoneUUID].service.updateCharacteristic(this.Characteristic.On, value);
 
     if (existingAccessory) {
