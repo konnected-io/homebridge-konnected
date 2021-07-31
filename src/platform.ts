@@ -1142,7 +1142,7 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
       clearTimeout(this.entryTriggerDelayTimerHandle);
       delete this.entryTriggerDelayTimerHandle;
       this.accessoriesRuntimeCache.forEach((runtimeCacheAccessory) => {
-        if (['siren', 'strobe'].includes(runtimeCacheAccessory.type)) {
+        if (['beeper', 'siren', 'strobe'].includes(runtimeCacheAccessory.type)) {
           this.actuateAccessory(runtimeCacheAccessory.UUID, false, null);
         }
       });
