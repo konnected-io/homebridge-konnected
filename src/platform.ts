@@ -940,7 +940,10 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
       const securitySystemAccessory = this.accessories.find((accessory) => accessory.UUID === this.securitySystemUUID);
 
       // check what modes the accessory has set to trigger the alarm
-      if (accessory.triggerableModes?.includes(String(securitySystemAccessory?.context.device.state) as never)) {
+      if (
+        accessory.triggerableModes?.includes(String(securitySystemAccessory?.context.device.state) as never) &&
+        typeof this.entryTriggerDelayTimerHandle === 'undefined'
+      ) {
         // accessory should trigger security system
 
         // find beepers and actuate audible delay sound
@@ -1138,6 +1141,7 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
     // if the security system is turned off, turn beepers, sirens and strobes off
     if (value === 3) {
       clearTimeout(this.entryTriggerDelayTimerHandle);
+      delete this.entryTriggerDelayTimerHandle;
       this.accessoriesRuntimeCache.forEach((runtimeCacheAccessory) => {
         if (['siren', 'strobe'].includes(runtimeCacheAccessory.type)) {
           this.actuateAccessory(runtimeCacheAccessory.UUID, false, null);

@@ -10,13 +10,13 @@ export class KonnectedPlatformAccessory {
   private service: Service;
   private accessoryServiceType: string;
   private temperatureSensorService;
-  private validSecuritySystemStates: number[];
+  private validSecuritySystemCurrentStates: number[];
 
   constructor(private readonly platform: KonnectedHomebridgePlatform, private readonly accessory: PlatformAccessory) {
     // translate the accessory type to the service type
     this.accessoryServiceType = TYPES_TO_ACCESSORIES[this.accessory.context.device.type][0];
 
-    this.validSecuritySystemStates = [];
+    this.validSecuritySystemCurrentStates = [];
 
     // set accessory information
     this.accessory
@@ -44,11 +44,12 @@ export class KonnectedPlatformAccessory {
       case 'SecuritySystem':
         {
           // default/required security system modes for HomeKit app
-          this.validSecuritySystemStates = [
+          this.validSecuritySystemCurrentStates = [
             this.platform.Characteristic.SecuritySystemTargetState.DISARM,
             this.platform.Characteristic.SecuritySystemTargetState.AWAY_ARM,
             // this.platform.Characteristic.SecuritySystemTargetState.STAY_ARM,
             // this.platform.Characteristic.SecuritySystemTargetState.NIGHT_ARM,
+            this.platform.Characteristic.SecuritySystemCurrentState.ALARM_TRIGGERED,
           ];
           let stayHomeModeUsed = false;
           let nightModeUsed    = false;
@@ -68,13 +69,13 @@ export class KonnectedPlatformAccessory {
             }
           });
           if (stayHomeModeUsed) {
-            this.validSecuritySystemStates.push(this.platform.Characteristic.SecuritySystemTargetState.STAY_ARM);
+            this.validSecuritySystemCurrentStates.push(this.platform.Characteristic.SecuritySystemTargetState.STAY_ARM);
           }
           if (nightModeUsed) {
-            this.validSecuritySystemStates.push(this.platform.Characteristic.SecuritySystemTargetState.NIGHT_ARM);
+            this.validSecuritySystemCurrentStates.push(this.platform.Characteristic.SecuritySystemTargetState.NIGHT_ARM);
           }
 
-          const validValues = this.validSecuritySystemStates;
+          const validValues = this.validSecuritySystemCurrentStates;
 
           this.service
             .getCharacteristic(this.platform.Characteristic.SecuritySystemCurrentState)
@@ -82,7 +83,6 @@ export class KonnectedPlatformAccessory {
           this.service
             .getCharacteristic(this.platform.Characteristic.SecuritySystemTargetState)
             .setProps({ validValues })
-            .onGet(this.getSecuritySystemTargetState.bind(this))
             .onSet(this.setSecuritySystemTargetState.bind(this));
         }
         break;
@@ -214,7 +214,7 @@ export class KonnectedPlatformAccessory {
     // because the user didn't want or choose it for any of the sensors to trigger in
     if (
       typeof this.accessory.context.device.state === 'undefined' ||
-      !this.validSecuritySystemStates.includes(this.accessory.context.device.state)
+      !this.validSecuritySystemCurrentStates.includes(this.accessory.context.device.state)
     ) {
       this.accessory.context.device.state = value;
       this.platform.log.debug(
