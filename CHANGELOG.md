@@ -1,3 +1,5 @@
+## [1.1.7](https://github.com/konnected-io/homebridge-konnected/compare/1.1.6...1.1.7) (2021-08-03)
+
 ## [1.1.6](https://github.com/konnected-io/homebridge-konnected/compare/1.1.5...1.1.6) (2021-07-31)
 
 ### Changes:
