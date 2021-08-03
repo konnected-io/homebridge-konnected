@@ -24,7 +24,8 @@
       "autoAttachChildProcesses": true,
       "outFiles": [
         "${workspaceFolder}/dist/**.js"
-      ]
+      ],
+      "envFile": "${workspaceRoot}/.env"
     }
   ]
 }

@@ -296,7 +296,8 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
   discoverPanels() {
     const ssdpClient = new client.Client();
     const ssdpUrnPartial = 'urn:schemas-konnected-io:device';
-    const ssdpDeviceIDs: string[] = []; // used later for deduping
+    const ssdpDeviceIDs: string[] = []; // used later for deduping SSDP reflections
+    const excludedUUIDs: string[] = String(process.env.KONNECTED_EXCLUDES).split(','); // used for ignoring specific panels (mostly for development)
 
     // set discovery state
     this.ssdpDiscovering = true;
@@ -313,8 +314,8 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
         // extract UUID of panel from the USN string
         const panelUUID: string = headers.USN!.match(/^uuid:(.*)::.*$/i)![1] || '';
 
-        // dedupe responses and then provision panel(s)
-        if (!ssdpDeviceIDs.includes(panelUUID)) {
+        // dedupe responses, ignore excluded panels in environment variables, and then provision panel(s)
+        if (!ssdpDeviceIDs.includes(panelUUID) && !excludedUUIDs.includes(panelUUID)) {
           // get panel status object (not using async await)
           fetch(ssdpHeaderLocation.replace('Device.xml', 'status'))
             // convert response to JSON
