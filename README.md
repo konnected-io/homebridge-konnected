@@ -17,28 +17,42 @@
 
 ## Supported Features
 
-  * Native HomeKit Security System Control
-    * Arm/Disarm Security System
-    * Optional Home/Stay and Night Modes
-    * Configurable Sensor Security System Triggering
-    * Configurable Entry Delay Times
-    * Traditional Alarm System Integration
-    * Panic Button via Alarm Siren Switch
-    * Inverting Sensors
-    * Switch Trigger States (high vs low)
-  * Sensor States
-    * Contact
-    * Motion
-    * Glass Break
-    * Temperature
-    * Humidity
-    * Smoke
-    * Water Leak
-  * Switches/Actuators
-    * Beeper
-    * Siren
-    * Strobe Light
-    * Generic Switch
+<div align="left">
+  <img align="right" width="319" height="692" alt="Screen capture of Konnected accessories in HomeKit via the Konnected Homebridge plugin." src="https://user-images.githubusercontent.com/1437667/128083751-1eb31022-0c44-4954-9b0f-09c5c749d0f4.gif">
+  <ul>
+    <li>Native HomeKit Security System Control
+      <ul>
+        <li>Arm/Disarm Security System</li>
+        <li>Optional Home/Stay and Night Modes</li>
+        <li>Configurable Sensor Security System Triggering</li>
+        <li>Configurable Entry Delay Times</li>
+        <li>Traditional Alarm System Integration</li>
+        <li>Panic Button via Alarm Siren Switch</li>
+        <li>Inverting Sensors</li>
+        <li>Switch Trigger States (high vs low)</li>
+      </ul>
+    </li>
+    <li>Sensor States
+      <ul>
+        <li>Contact</li>
+        <li>Motion</li>
+        <li>Glass Break</li>
+        <li>Temperature</li>
+        <li>Humidity</li>
+        <li>Smoke</li>
+        <li>Water Leak</li>
+      </ul>
+    </li>
+    <li>Switches/Actuators
+      <ul>
+        <li>Beeper</li>
+        <li>Siren</li>
+        <li>Strobe Light</li>
+        <li>Generic Switch</li>
+      </ul>
+    </li>
+  </ul>
+</div>
 
 ## Upcoming Features
 
