@@ -206,13 +206,12 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
           reason: 'Authorization failed, token not valid',
         });
 
-        this.log.error(`Authentication failed for ${req.params.id}, token not valid`);
-        this.log.error('Authentication token:', req.headers.authorization.split('Bearer ').pop());
-        this.log.error(req.body);
-
         // rediscover and reprovision panels
         if (this.ssdpDiscovering === false) {
-          this.log.debug('Rediscovering and reprovisioning panels...');
+          this.log.warn(`Received zone payload: ${req.body}`);
+          this.log.warn(`Authentication failed for ${req.params.id}, token not valid`);
+          this.log.warn('Authentication token:', req.headers.authorization.split('Bearer ').pop());
+          this.log.warn('Rediscovering and reprovisioning panels...');
           this.discoverPanels();
         }
       }
@@ -476,9 +475,7 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
       ...panelPayloadAccessories,
     };
 
-    this.log.debug(
-      `Panel ${panelName} ${panelSettingsEndpoint} payload:\n` + JSON.stringify(panelConfigurationPayload, null, 2)
-    );
+    this.log.debug(`Panel ${panelName} ${panelSettingsEndpoint} rebooting with payload changes:\n` + JSON.stringify(panelConfigurationPayload, null, 2));
 
     const provisionPanelResponse = async (url: string) => {
       try {
