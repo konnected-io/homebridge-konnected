@@ -84,6 +84,14 @@
     "ts-node": "^10.0.0",
     "typescript": "^4.3.5"
   },
+  "release-it": {
+    "plugins": {
+      "@release-it/conventional-changelog": {
+        "preset": "angular",
+        "infile": "CHANGELOG.md"
+      }
+    }
+  },
   "funding": [
     {
       "type": "github",
