@@ -1,6 +1,15 @@
 ## [1.1.8](https://github.com/konnected-io/homebridge-konnected/compare/1.1.7...1.1.8) (2021-08-03)
 
+### Changes:
+build: Adds release-it configuration block to package.json to modify CHANGELOG.md on publish. (343227b)
+
 ## [1.1.7](https://github.com/konnected-io/homebridge-konnected/compare/1.1.6...1.1.7) (2021-08-03)
+
+### Changes:
+* docs: Adds the CHANGELOG.md file to the repository, commits start using the Angular/ConventionalCommits commit conventions. (672960b)
+* Logging cleanup. (06cea66)
+* Adds system environment variables for excluding panels when developing.	(c0fcc05)
+* Updates README with a screen capture of Konnected accessories being operated in HomeKit. (6d320c0)
 
 ## [1.1.6](https://github.com/konnected-io/homebridge-konnected/compare/1.1.5...1.1.6) (2021-07-31)
 
