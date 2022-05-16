@@ -327,7 +327,7 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
               };
 
               // use the above information to construct panel in Homebridge config
-              this.updateHombridgeConfig(panelUUID, panelResponseObject);
+              this.updateHomebridgeConfig(panelUUID, panelResponseObject);
 
               // if the settings property does not exist in the response,
               // then we have an unprovisioned panel
@@ -385,7 +385,7 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
    * @param panelUUID string  UUID for the panel as reported in the USN on discovery.
    * @param panelObject PanelObjectInterface  The status response object of the plugin from discovery.
    */
-  updateHombridgeConfig(panelUUID: string, panelObject: PanelObjectInterface) {
+  updateHomebridgeConfig(panelUUID: string, panelObject: PanelObjectInterface) {
     // homebridge constants
     const config = this.api.user.configPath();
     const storage = this.api.user.storagePath();
