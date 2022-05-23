@@ -43,6 +43,8 @@
         },
         "entryDelaySettings": {
           "type": "object",
+          "expandable": true,
+          "expanded": false,
           "properties": {
             "": {
               "description": "Configurable settings for when the security system has been violated while armed to \"Away\" mode.<br>By default the beeper will have a constant sound, but if you use the example values, it will produce a long tone once every second so you know how much time you have to disarm the security system.",
@@ -78,6 +80,49 @@
               "step": 1,
               "minimum": -1,
               "placeholder": "(E.g., -1)"
+            }
+          }
+        },
+        "exitDelaySettings": {
+          "type": "object",
+          "expandable": true,
+          "expanded": false,
+          "properties": {
+            "": {
+              "description": "Configurable settings for the delay used before the security system has been completely armed.<br>If you don't want a delay, set this to 0.",
+              "type": "object"
+            },
+            "delay": {
+              "title": "Delay (seconds) (optional)",
+              "description": "The time used for the exit delay before the security system is completely armed.",
+              "type": "number",
+              "step": 1,
+              "minimum": 0,
+              "placeholder": "(default: 30)"
+            },
+            "audibleBeeperModes": {
+              "title": "The following selected arming modes will have an audible beeper countdown (if delay is not zero):",
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "title": "Mode",
+                "type": "string",
+                "enum": [
+                  "0",
+                  "2",
+                  "1"
+                ],
+                "enumNames": [
+                  "Home/Stay",
+                  "Night",
+                  "Away (default)"
+                ]
+              },
+              "default": [
+                false,
+                false,
+                "1"
+              ]
             }
           }
         }
@@ -451,7 +496,7 @@
                           "1"
                         ],
                         "enumNames": [
-                          "Home",
+                          "Home/Stay",
                           "Night",
                           "Away"
                         ]
