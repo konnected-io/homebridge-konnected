@@ -55,9 +55,12 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
   // security system UUID (we only allow one security system per homebridge instance)
   private securitySystemUUID: string = this.api.hap.uuid.generate(this.config.platform);
 
-  private entryTriggerDelay: number = this.config.advanced?.entryDelaySettings?.delay
-    ? this.config.advanced?.entryDelaySettings?.delay * 1000
-    : 30000; // zero = instant trigger
+  // define entry delay defaults
+  private entryTriggerDelay: number =
+    this.config.advanced?.entryDelaySettings?.delay !== null &&
+    typeof this.config.advanced?.entryDelaySettings?.delay !== 'undefined'
+      ? Math.round(this.config.advanced?.entryDelaySettings?.delay) * 1000
+      : 30000; // zero = instant trigger
 
   private entryTriggerDelayTimerHandle;
 
