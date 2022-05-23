@@ -194,6 +194,12 @@ For those without Config UI X, or are running this on HOOBS < 4.0, please see th
     * **"pulseDuration"**: *(optional)* Beeper setting for how long the its pulse is maintained in the on state for when the system is violated (in milliseconds, e.g. 975).
     * **"pulsePause"**: *(conditional - required if pulseRepeat exists)* Beeper setting for how long the it pauses between pulses (in milliseconds, e.g. 25).
     * **"pulseRepeat"**: *(conditional - required if pulsePause exists)* Beeper setting for how many times it repeats the pulse sequence (infinite = -1, e.g., -1)
+  * **"exitDelaySettings"**: *(optional)* An object of settings for the delay of time used before the security system has been completely armed. By default, if there is a beeper present, the Away mode will have an audible beeper countdown over the course of the entire delay time:
+    * **"delay"**: *(optional)* The time it takes before the security system is armed, if nothing is set the default is 30 seconds (in seconds).
+    * **"audibleBeeperModes"**: *(optional)* Choose which arming modes will have an audible beeper countdown. Any one of the following:
+        * "0" for home/stay mode
+        * "1" for away mode
+        * "2" for night mode
 * **"panels"**: A panel must exist to associate different sensors and actuators with zones. This section is an array of objects that represent the various panel details and features as well as zones:
   * **"name"** *(required)* The name of the specific panel.
   * **"UUID"** *(required/auto-generated/readonly)* The unique identifier for the panel.
