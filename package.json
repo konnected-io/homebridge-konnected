@@ -1,7 +1,7 @@
 {
   "displayName": "Homebridge Konnected",
   "name": "homebridge-konnected",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Homebridge plugin for Konnected security alarm systems",
   "author": "mkormendy",
   "license": "MIT",
