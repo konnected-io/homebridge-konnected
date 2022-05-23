@@ -9,9 +9,13 @@
 
 [![Lint & Build](https://flat.badgen.net/github/checks/konnected-io/homebridge-konnected?icon=github&label=lint%20%26%20build)](https://github.com/konnected-io/homebridge-konnected/actions) [![npm Download Total](https://flat.badgen.net/npm/dt/homebridge-konnected?icon=npm)](https://www.npmjs.com/package/homebridge-konnected)
 
-[![Homebridge Verified](https://badgen.net/badge/homebridge/verified/purple)](https://github.com/homebridge/homebridge/wiki/Verified-Plugins) [![HOOBS Certified](https://flat.badgen.net/badge/hoobs/certified/f89f1a)](https://plugins.hoobs.org/plugin/homebridge-konnected) [![Apple HomeKit](https://flat.badgen.net/badge/apple/homekit/f89f1a?icon=apple)](https://www.apple.com/ios/home/) [![License: MIT](https://flat.badgen.net/badge/license/MIT/blue)](https://github.com/konnected-io/homebridge-konnected/blob/master/LICENSE)
+[![Homebridge Verified](https://flat.badgen.net/badge/homebridge/verified/4f4f4f?icon=https://developers.homebridge.io/assets/images/homebridge-color-round.svg&labelColor=57277c)](https://github.com/homebridge/homebridge/wiki/Verified-Plugins) [![HOOBS Certified](https://flat.badgen.net/badge/hoobs/certified/4f4f4f?icon=https://developers.homebridge.io/assets/images/homebridge-color-round.svg&labelColor=ffac10)](https://plugins.hoobs.org/plugin/homebridge-konnected) [![Apple HomeKit](https://flat.badgen.net/badge/apple/homekit/f89f1a?icon=apple)](https://www.apple.com/ios/home/) 
 
-**[Homebridge users get 15% off at konnected.io through 12/31/2021.<br>Use code HOMEBRIDGE2021 at checkout!](https://konnected.io/?utm_campaign=homebridge)**
+[![Discord Channel](https://flat.badgen.net/badge/discord/homebridge%23konnected/6670f5?icon=discord)](https://discord.gg/YsujtCysZZ) [![Discord Channel](https://flat.badgen.net/badge/reddit/r%2Fkonnected/FF4500?icon=https://www.redditinc.com/assets/images/site/logo01.svg)](https://www.reddit.com/r/konnected/)
+
+[![License: MIT](https://flat.badgen.net/badge/license/MIT/blue)](https://github.com/konnected-io/homebridge-konnected/blob/master/LICENSE)
+
+**[Homebridge users get 15% off at konnected.io.<br>Use code HOMEBRIDGE2021 at checkout!](https://konnected.io/?utm_campaign=homebridge)**
 
 </span>
 
