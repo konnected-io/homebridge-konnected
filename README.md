@@ -186,11 +186,11 @@ For those without Config UI X, or are running this on HOOBS < 4.0, please see th
 * **"platform"**: *(required)* Must always be "konnected" 
 * **"name"**: *(required)* Can be anything, it is the name that will appear in your Homebridge log.
 * **"advanced"**: An object of optional advanced plugin settings:
-  * **"listenerIP"**: *(optional)* If the system hosting Homebridge/HOOBS has multiple active network adapters (e.g., wifi, ethernet, etc.), use this field to force the network IPv4 address that this plugin will listen for zone state changes on.*
+  * **"listenerIP"**: *(optional)* Use this field to force the network IPv4 address that this Homebridge plugin will listen from for zone state changes. This is useful if the system hosting Homebridge/HOOBS has multiple active network adapters (The system is connected both via wifi and ethernet but certain traffic is routed to one or the other, etc.)*
   * **"listenerPort"**: *(optional)* Use this field to force the network port that this plugin will listen for zone state changes on (between 1000 and 65535).
   * **"discoveryTimeout"**: *(optional)* A length of time in seconds (between 1 and 300) to allow this plugin to discover all of Konnected panels on the network.
   * **"entryDelaySettings"**: *(optional)* An object of settings related to the period of delay after someone enters (violates) the security system. If there is a beeper present, by default it will have a constant sound, but if you use the example values, it will produce a long tone once every second so you know how much time you have to disarm the security system:
-    * **"delay"**: *(optional)* The entry delay before the security system is triggered and the siren zone is triggered (in seconds).
+    * **"delay"**: *(optional)* The time it takes before the security system is triggered and the siren zone is triggered (in seconds).
     * **"pulseDuration"**: *(optional)* Beeper setting for how long the its pulse is maintained in the on state for when the system is violated (in milliseconds, e.g. 975).
     * **"pulsePause"**: *(conditional - required if pulseRepeat exists)* Beeper setting for how long the it pauses between pulses (in milliseconds, e.g. 25).
     * **"pulseRepeat"**: *(conditional - required if pulsePause exists)* Beeper setting for how many times it repeats the pulse sequence (infinite = -1, e.g., -1)
