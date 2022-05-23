@@ -103,6 +103,14 @@ For those without Config UI X, or are running this on HOOBS < 4.0, please see th
       "pulseDuration": 975,
       "pulsePause": 25,
       "pulseRepeat": -1
+    },
+    "exitDelaySettings": {
+      "delay": 15,
+      "audibleBeeperModes": [
+        "0",
+        "1",
+        "2"
+      ]
     }
   },
   "panels": [
