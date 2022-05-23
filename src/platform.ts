@@ -422,14 +422,32 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
       // find existing definition of the panel
       const platformPanelPosition = modifiedConfig.platforms[platform].panels.findIndex((panel: { [key: string]: unknown }) => panel.uuid === panelUUID);
 
-      // if panel doesn't exist, push to panels array and write backup and config
       if (platformPanelPosition < 0) {
+        // if panel doesn't exist, push to panels array and write backup and config
         modifiedConfig.platforms[platform].panels.push({
-          name: (panelObject.model && panelObject.model !== '' ? panelObject.model : 'Konnected V1-V2').replace(/[^A-Za-z0-9\s/'":\-#.]/gi, ''),
+          name: (panelObject.model && panelObject.model !== '' ? panelObject.model : 'Konnected V1-V2').replace(
+            /[^A-Za-z0-9\s/'":\-#.]/gi,
+            ''
+          ),
           uuid: panelUUID,
           ipAddress: panelObject.ip,
           port: panelObject.port,
         });
+        fs.writeFileSync(backup, JSON.stringify(existingConfig, null, 4));
+        fs.writeFileSync(config, JSON.stringify(modifiedConfig, null, 4));
+      } else if (
+        modifiedConfig.platforms[platform].panels[platformPanelPosition].uuid === panelUUID &&
+        (modifiedConfig.platforms[platform].panels[platformPanelPosition].ipAddress !== panelObject.ip ||
+          modifiedConfig.platforms[platform].panels[platformPanelPosition].port !== panelObject.port)
+      ) {
+        // if the IP address or port is the same don't update the config
+        modifiedConfig.platforms[platform].panels[platformPanelPosition].name = (
+          panelObject.model && panelObject.model !== '' ? panelObject.model : 'Konnected V1-V2'
+        ).replace(/[^A-Za-z0-9\s/'":\-#.]/gi, '');
+        modifiedConfig.platforms[platform].panels[platformPanelPosition].uuid = panelUUID;
+        modifiedConfig.platforms[platform].panels[platformPanelPosition].ipAddress = panelObject.ip;
+        modifiedConfig.platforms[platform].panels[platformPanelPosition].port = panelObject.port;
+
         fs.writeFileSync(backup, JSON.stringify(existingConfig, null, 4));
         fs.writeFileSync(config, JSON.stringify(modifiedConfig, null, 4));
       }
