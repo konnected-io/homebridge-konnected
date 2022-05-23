@@ -962,7 +962,7 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
         // wait the entry delay time and trigger the security system
         this.entryTriggerDelayTimerHandle = setTimeout(() => {
           this.log.debug(
-            `Set [${securitySystemAccessory?.displayName}] (${securitySystemAccessory?.context.device.serialNumber}) '${securitySystemAccessory?.context.device.type}' characteristic: 4 (triggered!)`
+            `Set [${securitySystemAccessory?.displayName}] (${securitySystemAccessory?.context.device.serialNumber}) as '${securitySystemAccessory?.context.device.type}' characteristic: 4 (triggered!)`
           );
           this.controlSecuritySystem(4);
         }, this.entryTriggerDelay);
@@ -1073,7 +1073,7 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
               }
 
               this.log.debug(
-                `Actuating ['${existingAccessory.displayName}'] (${existingAccessory.context.device.serialNumber}) '${existingAccessory.context.device.type}' with payload:\n` +
+                `Actuating [${existingAccessory.displayName}] (${existingAccessory.context.device.serialNumber}) as '${existingAccessory.context.device.type}' with payload:\n` +
                   JSON.stringify(actuatorPayload, null, 2)
               );
 
@@ -1102,15 +1102,17 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
                           if (runtimeCacheAccessory.UUID === zoneUUID) {
                             runtimeCacheAccessory.state = existingAccessory.context.device.state = false;
                             this.log.debug(
-                              `Set [${runtimeCacheAccessory.displayName}] (${runtimeCacheAccessory.serialNumber}) '${runtimeCacheAccessory.type}' characteristic value: false`
+                              `Set [${runtimeCacheAccessory.displayName}] (${runtimeCacheAccessory.serialNumber}) as '${runtimeCacheAccessory.type}' characteristic value: false`
                             );
                           }
                         });
                       }, actuatorDuration);
                     }
                   }
-                } catch (error) {
-                  this.log.error(error);
+                } catch (error: unknown) {
+                  if (error instanceof Error) {
+                    this.log.error(error['message']);
+                  }
                 }
               };
               actuatePanelZone(panelEndpoint);
