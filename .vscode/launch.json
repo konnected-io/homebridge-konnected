@@ -14,7 +14,7 @@
         "run", "debug"
       ],
       "args": ["--colors"],
-      "console": "externalTerminal",
+      "console": "externalTerminal", // "externalTerminal" or "internalConsole"
       "internalConsoleOptions": "neverOpen",
       "outputCapture": "std",
       "program": "${workspaceFolder}/src/index.js",
