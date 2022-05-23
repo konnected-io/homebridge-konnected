@@ -55,6 +55,8 @@
 
 ## Upcoming Features
 
+  * Bypass Switch for Sensor Zones
+  * Virtual Zones for HomeKit Automation
   * Professional 24/7 smart home monitoring (powered by [Noonlight](https://noonlight.com/))
 
 ## Installation
