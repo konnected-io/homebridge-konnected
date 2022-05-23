@@ -322,3 +322,20 @@ Sometimes fixing a problematic Homebridge/HOOBS/HomeKit accessory is as simple a
 
 **WARNING:** Be careful to not delete the `persist` folder or its contents! Your Homebridge and devices will become unresponsive and you will have to completely re-pair the Homebridge bridge (remove and re-scan the QR-code for Homebridge and set up all of your accessories/devices again).
 
+### Check the Discord Channel:
+As a last resort **(only because it's NOT monitored regularly)** try checking the [Homebridge Discord Konnected channel](https://discord.gg/YsujtCysZZ). Sometimes troubleshooting a problem needs further real-time interaction and live chat can help.
+
+As well, the Homebridge Discord server is a great place to get help for general Homebridge configuration questions too.
+
+## Contributions & Thanks
+
+Plugin development, maintainance, and forum/ticket support is performed by [Mike Kormendy](https://github.com/mkormendy) in his spare time and blessed by Konnected Inc. If you somehow benefit from using this open source plugin and want to support Mike for his work on it, consider sponsoring him on [Github](https://github.com/sponsors/mkormendy), donate with [PayPal](https://www.paypal.me/mikekormendy), or buy him a coffee with [Ko-fi](https://ko-fi.com/mikekormendy) – any contribution is greatly appreciated.
+
+Don't forget to use the 15% discount code [HOMEBRIDGE2021](https://konnected.io/?utm_campaign=homebridge) to buy any products on [Konnected's official online store](https://konnected.io/?utm_campaign=homebridge). This helps track the impact that developing this Homebridge/HomeKit plugin has on the overall Konnected project.
+
+#### Thanks:
+I'd like to thank [Nate Clark](https://github.com/heythisisnate) for the initial Konnected Kickstarter hardware project and the following people for their guidance and help with code reviews, testing, pull requests etc:
+- [@bwp91](https://github.com/bwp91)
+- [@oznu](https://github.com/oznu) @ Homebridge
+- [@northernman54](https://github.com/NorthernMan54) @ Homebridge
+- [@mkellsy](https://github.com/mkellsy) @ HOOBS
