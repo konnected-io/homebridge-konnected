@@ -64,6 +64,17 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
 
   private entryTriggerDelayTimerHandle;
 
+  // define exit delay defaults
+  private exitTriggerDelay: number =
+    this.config.advanced?.exitDelaySettings?.delay !== null &&
+    typeof this.config.advanced?.exitDelaySettings?.delay !== 'undefined'
+      ? Math.round(this.config.advanced?.exitDelaySettings?.delay) * 1000
+      : 30000; // zero = instant arming
+
+  private exitTriggerDelayTimerHandle1;
+  private exitTriggerDelayTimerHandle2;
+  private exitTriggerDelayTimerHandle3;
+
   // define listening server variables
   private listenerIP: string = this.config.advanced?.listenerIP ? this.config.advanced.listenerIP : ip.address(); // system defined primary network interface
   private listenerPort: number = this.config.advanced?.listenerPort ? this.config.advanced.listenerPort : 0; // zero = autochoose
@@ -1149,11 +1160,99 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
    * @param value number  The value to change the state of the Security System accessory to.
    */
   controlSecuritySystem(value: number) {
-    // control security system based on value
-    this.konnectedPlatformAccessories[this.securitySystemUUID].service.updateCharacteristic(
-      this.Characteristic.SecuritySystemCurrentState,
-      value
-    );
+    // pulse settings
+    const duration = 100; // change this to make the pulse longer or shorter, everything else will calculate
+    const pause = 1000 - duration;
+    const minDefault = 10000; // anything less than 10 seconds is just going to have beeps once a second
+
+    clearTimeout(this.exitTriggerDelayTimerHandle1);
+    clearTimeout(this.exitTriggerDelayTimerHandle2);
+    clearTimeout(this.exitTriggerDelayTimerHandle3);
+    delete this.exitTriggerDelayTimerHandle1;
+    delete this.exitTriggerDelayTimerHandle2;
+    delete this.exitTriggerDelayTimerHandle3;
+
+    // if the security system is set to one of 0: home/stay, 1: away, 2: night
+    if (value < 3) {
+      // set security system TARGET based on value (then later make actual state by updating CURRENT state)
+      this.konnectedPlatformAccessories[this.securitySystemUUID].service.updateCharacteristic(
+        this.Characteristic.SecuritySystemTargetState,
+        value
+      );
+
+      this.accessoriesRuntimeCache.forEach((runtimeCacheAccessory) => {
+        if ('beeper' === runtimeCacheAccessory.type) {
+          // clears any current beeping
+          this.actuateAccessory(runtimeCacheAccessory.UUID, false, null);
+        }
+      });
+
+      if (
+        (typeof this.config.advanced?.exitDelaySettings?.audibleBeeperModes !== 'undefined' &&
+          this.config.advanced?.exitDelaySettings?.audibleBeeperModes.includes(String(value))) ||
+        (typeof this.config.advanced?.exitDelaySettings?.audibleBeeperModes === 'undefined' && value === 1)
+      ) {
+        // if the user has configured which mode should have audible beeper countdowns
+        // or if not, but the security mode is being set to away, then we do some sort of default countdown
+        this.accessoriesRuntimeCache.forEach((runtimeCacheAccessory) => {
+          if ('beeper' === runtimeCacheAccessory.type) {
+            if (this.exitTriggerDelay > minDefault) {
+              // three stages of short beeper pulses (per second): 1ps > 2ps > 4ps
+              this.actuateAccessory(runtimeCacheAccessory.UUID, true, {
+                pulseDuration: duration,
+                pulsePause: pause,
+                pulseRepeat: Math.floor(this.exitTriggerDelay / 1000 / 3),
+              });
+              // we need to clear this if the mode changes before they complete
+              // make as a variable that we can clear set timeout
+              this.exitTriggerDelayTimerHandle2 = setTimeout(() => {
+                this.actuateAccessory(runtimeCacheAccessory.UUID, true, {
+                  pulseDuration: duration,
+                  pulsePause: pause / 2,
+                  pulseRepeat: Math.floor((this.exitTriggerDelay / 1000 / 3) * 2) - 1,
+                });
+              }, this.exitTriggerDelay / 3);
+              // we need to clear this if the mode changes before they complete
+              // make as a variable that we can clear set timeout
+              this.exitTriggerDelayTimerHandle3 = setTimeout(() => {
+                this.actuateAccessory(runtimeCacheAccessory.UUID, true, {
+                  pulseDuration: duration,
+                  pulsePause: pause / 4,
+                  pulseRepeat: Math.floor((this.exitTriggerDelay / 1000 / 3) * 4) - 2,
+                });
+              }, (this.exitTriggerDelay / 3) * 2);
+            } else if (this.exitTriggerDelay <= minDefault && this.exitTriggerDelay > 1000) {
+              // one short pulse per second
+              this.actuateAccessory(runtimeCacheAccessory.UUID, true, {
+                pulseDuration: duration,
+                pulsePause: pause,
+                pulseRepeat: this.exitTriggerDelay / 1000,
+              });
+            }
+          }
+        });
+        // wait the exit delay time and then arm security system based on value
+        this.exitTriggerDelayTimerHandle1 = setTimeout(() => {
+          this.konnectedPlatformAccessories[this.securitySystemUUID].service.updateCharacteristic(
+            this.Characteristic.SecuritySystemCurrentState,
+            value
+          );
+        }, this.exitTriggerDelay);
+      } else {
+        // immediately arm system
+        this.konnectedPlatformAccessories[this.securitySystemUUID].service.updateCharacteristic(
+          this.Characteristic.SecuritySystemCurrentState,
+          value
+        );
+      }
+    } else {
+      // 3: disarmed, 4: alarm triggered
+      this.konnectedPlatformAccessories[this.securitySystemUUID].service.updateCharacteristic(
+        this.Characteristic.SecuritySystemCurrentState,
+        value
+      );
+    }
+
     // store in platform accessories cache
     this.accessories.find((accessory) => {
       if (accessory.UUID === this.securitySystemUUID) {
