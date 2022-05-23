@@ -64,14 +64,14 @@
               "type": "number",
               "step": 1,
               "minimum": 1,
-              "placeholder": "(E.g., 975)"
+              "placeholder": "(E.g., 950)"
             },
             "pulsePause": {
               "title": "Beeper Pause Between Pulses (milliseconds) (optional, but required if Times to Repeat exists)",
               "type": "number",
               "step": 1,
               "minimum": 1,
-              "placeholder": "(E.g., 25)"
+              "placeholder": "(E.g., 50)"
             },
             "pulseRepeat": {
               "title": "Beeper Times to Repeat (optional, but required if Pause Between Pulses exists)",
