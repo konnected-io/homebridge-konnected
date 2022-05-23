@@ -514,13 +514,15 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(panelConfigurationPayload),
         });
-      } catch (error) {
-        if (error.errno === 'ECONNRESET') {
-          this.log.info(
-            `The panel at ${url} has disconnected and is likely rebooting to apply new provisioning settings`
-          );
-        } else {
-          this.log.error(error);
+      } catch (error: unknown) {
+        if (error instanceof Error) {
+          if (error['errno'] === 'ECONNRESET') {
+            this.log.info(
+              `The panel at ${url} has disconnected and is likely rebooting to apply new provisioning settings`
+            );
+          } else {
+            this.log.error(error['message']);
+          }
         }
       }
     };
