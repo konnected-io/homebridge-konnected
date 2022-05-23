@@ -358,7 +358,7 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
                   }
                 } else if (panelResponseObject.settings.endpoint_type === 'aws_iot') {
                   this.log.error(
-                    `ERROR: Panel ${panelUUID} has previously been provisioned to use the Konnected Cloud and cannot be provisioned by Homebridge until you de-register your panel from the Konnected Cloud and factory reset it. Please use the Konnected mobile app to de-regester the panel from the Konnected Cloud.`
+                    `ERROR: Cannot provision panel ${panelUUID} with Homebridge. Panel has previously been provisioned with another platform (Konnected Cloud, SmartThings, Home Assistant, Hubitat,. etc). Please factory reset your Konnected Alarm panel and disable any other platform connectors before associating the panel with Homebridge.`
                   );
                 }
               }
