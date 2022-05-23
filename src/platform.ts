@@ -181,13 +181,22 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
           this.accessoriesRuntimeCache.find((runtimeCacheAccessory) => {
             if (runtimeCacheAccessory.serialNumber === req.params.id + '-' + requestPanelZone) {
               if (['beeper', 'siren', 'strobe', 'switch'].includes(runtimeCacheAccessory.type)) {
-                if (runtimeCacheAccessory.trigger === 'low' && runtimeCacheAccessory.state === false) {
+                if (runtimeCacheAccessory.trigger === 'low' && runtimeCacheAccessory.state === 0) {
                   responsePayload.state = 1; // set to normally high (1), waiting to be triggered low (0)
-                } else if (runtimeCacheAccessory.trigger === 'low' && (runtimeCacheAccessory.state === true || runtimeCacheAccessory.state === undefined)) {
+                } else if (
+                  runtimeCacheAccessory.trigger === 'low' &&
+                  (runtimeCacheAccessory.state === 1 || runtimeCacheAccessory.state === undefined)
+                ) {
                   responsePayload.state = 0; // set to triggered low (0), waiting to be normally high (1)
-                } else if ((runtimeCacheAccessory.trigger === 'high' || runtimeCacheAccessory.trigger === undefined) && (runtimeCacheAccessory.state === false || runtimeCacheAccessory.state === undefined)) {
+                } else if (
+                  (runtimeCacheAccessory.trigger === 'high' || runtimeCacheAccessory.trigger === undefined) &&
+                  (runtimeCacheAccessory.state === 0 || runtimeCacheAccessory.state === undefined)
+                ) {
                   responsePayload.state = 0; // set to normally low (0), waiting to be triggered high (1)
-                } else if ((runtimeCacheAccessory.trigger === 'high' || runtimeCacheAccessory.trigger === undefined) && runtimeCacheAccessory.state === true) {
+                } else if (
+                  (runtimeCacheAccessory.trigger === 'high' || runtimeCacheAccessory.trigger === undefined) &&
+                  runtimeCacheAccessory.state === 1
+                ) {
                   responsePayload.state = 1; // set to triggered high (1), waiting to be normally low (0)
                 }
               } else {
@@ -659,7 +668,7 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
               // store previous state from existing Homebridge's platform accessory cache state
               this.accessories.forEach((accessory) => {
                 if (accessory.UUID === zoneUUID) {
-                  // boolean or number state
+                  // binary state
                   if (typeof accessory.context.device.state !== 'undefined') {
                     zoneObject.state = accessory.context.device.state;
                   }
@@ -830,32 +839,28 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
 
     // check if the accessory already exists
     if (existingAccessory) {
-      this.log.debug(`${existingAccessory.displayName} (${existingAccessory.context.device.serialNumber}):`, zoneState);
-
-      // const defaultStateValue: boolean | number = this.config.existingAccessory.context.device.state;
-      // console.log('defaultstateValue:', defaultStateValue);
+      this.log.debug(
+        `Panel sent update for [${existingAccessory.displayName}] (${existingAccessory.context.device.serialNumber}) with value:\n`,
+        zoneState
+      );
 
       // loop through the accessories state cache and update state and service characteristic
       this.accessoriesRuntimeCache.forEach((runtimeCacheAccessory) => {
         if (runtimeCacheAccessory.UUID === zoneUUID) {
           // this is the default state for all binary switches in HomeKit
-          const defaultStateValue: boolean | number = runtimeCacheAccessory.type === 'motion' ? false : 0; // 0 = false in boolean
+          let defaultStateValue = 0;
           // incoming state from panel
-          const inboundStateValue: boolean | number = inboundPayload.body.state;
+          const inboundStateValue = inboundPayload.body.state;
           // set default result state
-          let resultStateValue: boolean | number = inboundStateValue;
+          let resultStateValue = inboundStateValue;
 
           if (!['humidtemp', 'temperature'].includes(runtimeCacheAccessory.type)) {
             // invert the value if configured to have its value inverted
             if (runtimeCacheAccessory.invert === true) {
-              // switch value
+              defaultStateValue = 1;
               resultStateValue = inboundStateValue === 0 ? 1 : 0;
-              // motion sensor's state is a boolean characteristic
-              if (runtimeCacheAccessory.type === 'motion') {
-                resultStateValue = Boolean(inboundStateValue);
-              }
               this.log.debug(
-                `${runtimeCacheAccessory.displayName} (${runtimeCacheAccessory.serialNumber}): inverted state from '${inboundStateValue}' to '${resultStateValue}'`
+                `[${runtimeCacheAccessory.displayName}] (${runtimeCacheAccessory.serialNumber}) as ${runtimeCacheAccessory.type} inverted state from '${inboundStateValue}' to '${resultStateValue}'`
               );
             }
             // now check if the accessory should do something: e.g., trigger the alarm, produce an audible beep, etc.
@@ -923,19 +928,15 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
    * Determine if the passed in sensor accessory should do something.
    * E.g., trigger the alarm, produce an audible beep, etc.
    *
-   * @param defaultStateValue boolean | number  The original default state of the accessory.
-   * @param resultStateValue boolean | number  The state of the accessory as updated.
    * @param accessory RuntimeCacheInterface  The accessory that we are basing our actions by.
+   * @param defaultStateValue number  The original default state of the accessory.
+   * @param resultStateValue number  The state of the accessory as updated.
    */
-  processSensorAccessoryActions(
-    accessory: RuntimeCacheInterface,
-    defaultStateValue: boolean | number,
-    resultStateValue: boolean | number
-  ) {
+  processSensorAccessoryActions(accessory: RuntimeCacheInterface, defaultStateValue: number, resultStateValue: number) {
     // if the default state of the accessory is not the same as the updated state, we should process it
     if (defaultStateValue !== resultStateValue) {
       this.log.debug(
-        `${accessory.displayName} (${accessory.serialNumber}): changed from its default state of '${defaultStateValue}' to '${resultStateValue}'`
+        `[${accessory.displayName}] (${accessory.serialNumber}) as '${accessory.type}' changed from its default state of ${defaultStateValue} to ${resultStateValue}`
       );
 
       const securitySystemAccessory = this.accessories.find((accessory) => accessory.UUID === this.securitySystemUUID);
@@ -987,7 +988,7 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
    * @param value boolean  The value of the state as represented in HomeKit (may be adjusted by config trigger settings).
    * @param inboundSwitchSettings object | null | undefined  Settings object that can override the default accessory settings.
    */
-  actuateAccessory(zoneUUID: string, value: boolean | number, inboundSwitchSettings: Record<string, unknown> | null) {
+  actuateAccessory(zoneUUID: string, value: boolean, inboundSwitchSettings: Record<string, unknown> | null) {
     // retrieve the matching accessory
     const existingAccessory = this.accessories.find((accessory) => accessory.UUID === zoneUUID);
 

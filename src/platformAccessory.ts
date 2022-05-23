@@ -247,18 +247,8 @@ export class KonnectedPlatformAccessory {
         let logLabelDefault = '';
         const logLabelType = type !== runtimeCacheAccessory.type ? '-' + type : '';
 
-        // boolean-binary accessory - these are boolean in HomeKit
-        if ('motion' === type || 'switch' === type) {
-          if (typeof runtimeCacheAccessory.state !== 'boolean') {
-            runtimeCacheAccessory.state = this.accessory.context.device.state = value = false;
-            logLabelDefault = 'default ';
-          } else {
-            value = this.accessory.context.device.state = Boolean(runtimeCacheAccessory.state);
-          }
-        }
-
-        // numeric-binary accessory - these are numeric in HomeKit
-        if ('contact' === type || 'water' === type || 'smoke' === type) {
+        // binary accessory
+        if (['motion', 'switch', 'contact', 'water', 'smoke'].includes(type)) {
           if (typeof runtimeCacheAccessory.state !== 'number') {
             runtimeCacheAccessory.state = this.accessory.context.device.state = value = 0;
             logLabelDefault = 'default ';
