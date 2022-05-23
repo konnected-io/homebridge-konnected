@@ -284,7 +284,7 @@ export class KonnectedPlatformAccessory {
         }
 
         this.platform.log.debug(
-          `Get ${logLabelDefault}[${runtimeCacheAccessory.displayName}] (${runtimeCacheAccessory.serialNumber}) '${runtimeCacheAccessory.type}${logLabelType}' characteristic value: ${value}`
+          `Get ${logLabelDefault}[${runtimeCacheAccessory.displayName}] (${runtimeCacheAccessory.serialNumber}) as '${runtimeCacheAccessory.type}${logLabelType}' characteristic value: ${value}`
         );
       }
     });
@@ -298,7 +298,7 @@ export class KonnectedPlatformAccessory {
         runtimeCacheAccessory.state = this.accessory.context.device.state = value;
         this.platform.actuateAccessory(this.accessory.context.device.UUID, value, null);
         this.platform.log.debug(
-          `Set [${runtimeCacheAccessory.displayName}] (${runtimeCacheAccessory.serialNumber}) '${runtimeCacheAccessory.type}' characteristic value: ${value}`
+          `Set [${runtimeCacheAccessory.displayName}] (${runtimeCacheAccessory.serialNumber}) as '${runtimeCacheAccessory.type}' characteristic value: ${value}`
         );
       }
     });
