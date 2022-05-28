@@ -41,6 +41,34 @@
           "maximum": 30,
           "placeholder": "(default: 5)"
         },
+        "manualDiscovery": {
+          "title": "Manual IP (optional)",
+          "description": "Disables auto discovery mode and manually configures IP address and port of Konnected Alarm Panels on the network.",
+		  "buttonText": "Add IP Address",
+          "type": "array",
+          "orderable": true,
+          "expandable": true,
+          "expanded": false,
+          "items": {
+            "type": "object",
+            "properties": {
+              "ipAddress": {
+                "title": "IP Address (must be static)",
+                "type": "string",
+                "format": "ipv4",
+				"required": true
+              },
+              "port": {
+                "title": "Port",
+                "type": "number",
+                "step": 1,
+                "minimum": 8000,
+                "maximum": 24777,
+				"required": true
+              }
+		    }
+	      }
+        },
         "entryDelaySettings": {
           "type": "object",
           "expandable": true,

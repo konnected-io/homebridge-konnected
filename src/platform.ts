@@ -85,7 +85,7 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
   private listenerAuth: string[] = []; // for storing random auth strings
   private ssdpDiscovering = false; // for storing state of SSDP discovery process
   private ssdpDiscoverAttempts = 0;
-
+  private manualDiscovery = this.config.advanced?.manualDiscovery ? this.config.advanced.manualDiscovery : [];
   constructor(public readonly log: Logger, public readonly config: PlatformConfig, public readonly api: API) {
     this.log.debug('Finished initializing platform');
 
@@ -315,27 +315,7 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
    * @reference Alarm Panel V1-V2: urn:schemas-konnected-io:device:Security:1
    * @reference Alarm Panel Pro: urn:schemas-konnected-io:device:Security:2
    */
-  discoverPanels() {
-    const ssdpClient = new client.Client();
-    const ssdpUrnPartial = 'urn:schemas-konnected-io:device';
-    const ssdpDeviceIDs: string[] = []; // used later for deduping SSDP reflections
-    const excludedUUIDs: string[] = String(process.env.KONNECTED_EXCLUDES).split(','); // used for ignoring specific panels (mostly for development)
-
-    // set discovery state
-    this.ssdpDiscovering = true;
-
-    // begin discovery
-    ssdpClient.search('ssdp:all');
-
-    // on discovery
-    ssdpClient.on('response', (headers) => {
-      // check for only Konnected devices
-      if (headers.ST!.indexOf(ssdpUrnPartial) !== -1) {
-        // store reported URL of panel that responded
-        const ssdpHeaderLocation: string = headers.LOCATION || '';
-        // extract UUID of panel from the USN string
-        const panelUUID: string = headers.USN!.match(/^uuid:(.*)::.*$/i)![1] || '';
-
+  discoveredPanel(panelUUID,ssdpHeaderLocation,ssdpDeviceIDs,excludedUUIDs) {
         // dedupe responses, ignore excluded panels in environment variables, and then provision panel(s)
         if (!ssdpDeviceIDs.includes(panelUUID) && !excludedUUIDs.includes(panelUUID)) {
           // get panel status object (not using async await)
@@ -378,12 +358,67 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
           // add the UUID to the deduping array
           ssdpDeviceIDs.push(panelUUID);
         }
+    }
+
+  discoverPanels() {
+    const ssdpDeviceIDs: string[] = []; // used later for deduping SSDP reflections
+    const excludedUUIDs: string[] = String(process.env.KONNECTED_EXCLUDES).split(','); // used for ignoring specific panels (mostly for development)
+
+    // set discovery state
+    this.ssdpDiscovering = true;
+
+    let ssdpClient;
+
+	if (this.manualDiscovery.length) {
+	  // manual discovery probe ip:port for device info
+	  const self = this;
+	  this.log.debug("Manual discovery enabled attempting connect to modules");
+	  for (let i=0, iend=this.manualDiscovery.length; i<iend; ++i) {
+	    const manualDiscovery = this.manualDiscovery[i];
+        const deviceLocation: string = "http://" + manualDiscovery.ipAddress + ":" + manualDiscovery.port.toString() + "/Device.xml";
+        this.log.info("Probing " + deviceLocation);
+        fetch(deviceLocation)
+          .then(response => response.text())
+          .then(data => {
+           const panelUUID: string = data.match(/<UDN>uuid:(.*?)<\/UDN>/i)![1] || '';
+		   if (panelUUID != '') {
+		     this.log.info(`Manual discovery found panel ${deviceLocation} -- ${panelUUID}`);
+             this.discoveredPanel(panelUUID,deviceLocation,ssdpDeviceIDs,excludedUUIDs);
+	       } else {
+		     this.log.info(`Manual discovery invalid response from ${deviceLocation} -- ${data}`);
+           }
+        })
+	    .catch (function(error) {
+            self.log.error("Manual discovery failed for " + manualDiscovery.ipAddress + ":" + manualDiscovery.port + ' - ' + error);
+        });
       }
-    });
+    } else {
+      this.log.debug("Automatic discovery enabled starting ssdpClient");
+
+	  ssdpClient = new client.Client();
+      const ssdpUrnPartial = 'urn:schemas-konnected-io:device';
+
+      // begin discovery
+      ssdpClient.search('ssdp:all');
+
+      // on discovery
+      ssdpClient.on('response', (headers) => {
+        // check for only Konnected devices
+        if (headers.ST!.indexOf(ssdpUrnPartial) !== -1) {
+          // store reported URL of panel that responded
+          const ssdpHeaderLocation: string = headers.LOCATION || '';
+          // extract UUID of panel from the USN string
+          const panelUUID: string = headers.USN!.match(/^uuid:(.*)::.*$/i)![1] || '';
+          this.discoveredPanel(panelUUID,ssdpHeaderLocation,ssdpDeviceIDs,excludedUUIDs);
+        }
+      });
+    }
 
     // stop discovery after a number of seconds seconds, default is 5
     setTimeout(() => {
-      ssdpClient.stop();
+	  if (ssdpClient !== undefined) {
+        ssdpClient.stop();
+	  }
       this.ssdpDiscovering = false;
       if (ssdpDeviceIDs.length) {
         this.log.debug('Discovery complete. Found panels:\n' + JSON.stringify(ssdpDeviceIDs, null, 2));
