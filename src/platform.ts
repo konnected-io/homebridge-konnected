@@ -355,10 +355,10 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
           }
         });
 
-        // add the UUID to the deduping array
-        ssdpDeviceIDs.push(panelUUID);
-      }
+      // add the UUID to the deduping array
+      ssdpDeviceIDs.push(panelUUID);
     }
+  }
 
   discoverPanels() {
     const ssdpDeviceIDs: string[] = []; // used later for deduping SSDP reflections
@@ -371,11 +371,11 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
 
     if (this.manualDiscovery.length) {
       // manual discovery probe ip:port for device info
-      this.log.debug("Manual discovery enabled attempting connect to modules");
+      this.log.debug('Manual discovery enabled attempting connect to modules');
       for (let i=0, iend=this.manualDiscovery.length; i<iend; ++i) {
         const manualDiscovery = this.manualDiscovery[i];
-        const deviceLocation: string = "http://" + manualDiscovery.ipAddress + ":" + manualDiscovery.port.toString() + "/Device.xml";
-        this.log.info("Probing " + deviceLocation);
+        const deviceLocation: string = 'http://' + manualDiscovery.ipAddress + ':' + manualDiscovery.port.toString() + '/Device.xml';
+        this.log.info('Probing ' + deviceLocation);
         fetch(deviceLocation)
           .then(response => response.text())
           .then(data => {
@@ -394,7 +394,7 @@ export class KonnectedHomebridgePlatform implements DynamicPlatformPlugin {
     } else {
       this.log.debug('Automatic discovery enabled starting ssdpClient');
 
-    ssdpClient = new client.Client();
+      ssdpClient = new client.Client();
       const ssdpUrnPartial = 'urn:schemas-konnected-io:device';
 
       // begin discovery
