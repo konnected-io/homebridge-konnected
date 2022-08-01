@@ -15,8 +15,6 @@
 
 [![License: MIT](https://flat.badgen.net/badge/license/MIT/blue)](https://github.com/konnected-io/homebridge-konnected/blob/master/LICENSE)
 
-**[Homebridge users get 15% off at konnected.io.<br>Use code HOMEBRIDGE2021 at checkout!](https://konnected.io/?utm_campaign=homebridge)**
-
 </span>
 
 ## Supported Features
@@ -330,8 +328,6 @@ As well, the Homebridge Discord server is a great place to get help for general 
 ## Contributions & Thanks
 
 Plugin development, maintainance, and forum/ticket support is performed by [Mike Kormendy](https://github.com/mkormendy) in his spare time and blessed by Konnected Inc. If you somehow benefit from using this open source plugin and want to support Mike for his work on it, consider sponsoring him on [Github](https://github.com/sponsors/mkormendy), donate with [PayPal](https://www.paypal.me/mikekormendy), or buy him a coffee with [Ko-fi](https://ko-fi.com/mikekormendy) – any contribution is greatly appreciated.
-
-Don't forget to use the 15% discount code [HOMEBRIDGE2021](https://konnected.io/?utm_campaign=homebridge) to buy any products on [Konnected's official online store](https://konnected.io/?utm_campaign=homebridge). This helps track the impact that developing this Homebridge/HomeKit plugin has on the overall Konnected project.
 
 #### Thanks:
 I'd like to thank [Nate Clark](https://github.com/heythisisnate) for the initial Konnected Kickstarter hardware project and the following people for their guidance and help with code reviews, testing, pull requests etc:
