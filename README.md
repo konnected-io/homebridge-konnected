@@ -313,7 +313,7 @@ Sometimes fixing a problematic Homebridge/HOOBS/HomeKit accessory is as simple a
     * HOOBS:
       * HOOBSBox/Linux-based/MacOS:
       * v3.x: `~/.hoobs/etc/accessories/cachedAccessories`
-      * v4.x: `/var/lib/hoobs/accessories/cachedAccessories`
+      * v4.x: `/var/lib/hoobs/konnectedbridge.accessories/cachedAccessories`
       * <strike>Windows</strike> (HOOBS does not work on Windows)
 
 3. Once the file is deleted, start up Homebridge/HOOBS and allow it to regenerate your accessories and the cache.
